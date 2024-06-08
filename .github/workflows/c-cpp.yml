@@ -25,12 +25,10 @@ jobs:
         include:
           - os: ubuntu-latest
             version: appimage
-            cache_path: ~/.ccache
             extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-x86_64.AppImage
             cmake_preset: linux-ninja-clang15-appimage
           - os: ubuntu-latest
             version: zip
-            cache_path: ~/.ccache
             extra_cmake_args: 
             cmake_preset: linux-ninja-clang15
           - os: windows-latest
@@ -79,13 +77,6 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-latest'
- 
-      - uses: actions/cache@v4
-        with:
-          path: ${{ matrix.cache_path }}
-          key: cache-${{ matrix.os }}-${{ matrix.config }}-${{ github.sha }}
-          restore-keys: |
-            cache-${{ matrix.os }}-${{ matrix.config }}-
 
       - name: Set up build environment (windows-latest)
         run: |
