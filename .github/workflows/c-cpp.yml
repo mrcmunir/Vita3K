@@ -25,10 +25,12 @@ jobs:
         include:
           - os: ubuntu-latest
             version: appimage
+            cache_path: ~/.ccache
             extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-x86_64.AppImage
             cmake_preset: linux-ninja-clang15-appimage
           - os: ubuntu-latest
             version: zip
+            cache_path: ~/.ccache
             extra_cmake_args: 
             cmake_preset: linux-ninja-clang15
           - os: windows-latest
@@ -77,7 +79,13 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-latest'
-
+ 
+      - uses: actions/cache@v4
+        with:
+          path: ${{ matrix.cache_path }}
+          key: cache-${{ matrix.os }}-${{ matrix.config }}-${{ github.sha }}
+          restore-keys: |
+            cache-${{ matrix.os }}-${{ matrix.config }}-
       - name: Set up build environment (windows-latest)
         run: |
           vcpkg install zlib:x64-windows-static-md boost-system:x64-windows-static-md boost-filesystem:x64-windows-static-md boost-program-options:x64-windows-static-md boost-icl:x64-windows-static-md boost-variant:x64-windows-static-md curl:x64-windows-static-md openssl:x64-windows-static-md
@@ -87,6 +95,10 @@ jobs:
       - name: Set up SDL 2.28.3 (ubuntu-latest)
         run: |
           SDL2VER=2.28.3
+          if [[ ! -e ~/.ccache ]]; then
+            mkdir ~/.ccache
+          fi  
+          cd ~/.ccache
           if [[ ! -e SDL2-${SDL2VER} ]]; then
             curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz
             tar -xzf SDL2-${SDL2VER}.tar.gz
@@ -114,7 +126,6 @@ jobs:
         run: |
           cmake ${{ matrix.extra_cmake_args }} --preset ${{ matrix.cmake_preset }}
           cmake --build build/${{ matrix.cmake_preset }} --config ${{ matrix.config }}
-
       - name: CTest
         working-directory: build/${{ matrix.cmake_preset }}
         run: ctest --build-config ${{ matrix.config }} --output-on-failure
@@ -215,7 +226,8 @@ jobs:
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.14.0/ghr_v0.14.0_linux_amd64.tar.gz
           tar xfv ghr_v0.14.0_linux_amd64.tar.gz
-          ghr_v0.14.0_linux_amd64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.14.0_linux_amd64/ghr -u Vita3K -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
