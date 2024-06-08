@@ -7,10 +7,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [l4t-nvidia]
+    branches: [master]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [l4t-nvidia]
+    branches: [master]
   schedule:
     - cron: '0 1 * * 3'
 
