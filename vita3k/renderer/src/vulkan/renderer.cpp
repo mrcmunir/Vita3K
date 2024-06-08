@@ -421,10 +421,10 @@ bool VKState::create(SDL_Window *window, std::unique_ptr<renderer::State> &state
         }
         features.support_memory_mapping &= support_standard_layout;
 
-#ifdef __APPLE__
-        //  we need to make a copy of the vertex buffer for moltenvk, so disable memory mapping
+
+        //  we need to disable for now due poor reserved memory for the fuction memory mapping correctly.
         features.support_memory_mapping = false;
-#endif
+
 
         if (features.support_memory_mapping) {
             if (support_external_memory) {
