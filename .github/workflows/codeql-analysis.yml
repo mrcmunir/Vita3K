@@ -38,12 +38,6 @@ jobs:
           sudo apt update
           sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ccache-${{ matrix.os }}-${{ matrix.config }}-${{ github.sha }}
-          restore-keys: ccache-${{ matrix.os }}-${{ matrix.config }}-
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -52,10 +46,6 @@ jobs:
       - name: Set up SDL 2.28.3 (ubuntu-latest)
         run: |
           SDL2VER=2.28.3
-          if [[ ! -e ~/.ccache ]]; then
-            mkdir ~/.ccache
-          fi  
-          cd ~/.ccache
           if [[ ! -e SDL2-${SDL2VER} ]]; then
             curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz
             tar -xzf SDL2-${SDL2VER}.tar.gz
