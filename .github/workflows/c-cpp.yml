@@ -315,7 +315,7 @@ jobs:
             else
               echo "Compressing $f"
               (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
-            fi
+             fi
             fi
           fi
           done
@@ -347,10 +347,10 @@ jobs:
                   echo "Compressing $f"
                   7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
                 fi
-              else
-                if [[ $f == *ubuntu-22.04-arm ]]
-                then
-                  if [[ $f == *appimage* ]]
+            else
+              if [[ $f == *ubuntu-22.04-arm ]]
+              then
+                if [[ $f == *appimage* ]]
                   then
                   cp $(basename $f)/*.AppImage* artifacts/
                 else
@@ -358,9 +358,9 @@ jobs:
                   echo "Compressing $f"
                   7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
                 fi
-              else
-                echo "Compressing $f"
-                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+            else
+              echo "Compressing $f"
+              7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
               fi
             fi
            fi
