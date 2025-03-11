@@ -21,17 +21,8 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm]
         config: [Release]
-        version: [zip, zip_memorymappingoff appimage, appimage_memorymappingoff]
+        version: [memorymappingoff appimage_memorymappingoff]
         include:
-          - os: ubuntu-22.04-arm
-            version: appimage
-            cache_path: ~/.ccache
-            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage 
-            cmake_preset: linux-ninja-clang-appimage
-          - os: ubuntu-22.04-arm
-            version: zip
-            cache_path: ~/.ccache
-            cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
             version: appimage_memorymappingoff
             cache_path: ~/.ccache
@@ -83,7 +74,7 @@ jobs:
           sudo make -C SDL2-${SDL2VER} install
         if: matrix.os == 'ubuntu-22.04-arm'
   
-      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage, ,appimage_memorymappingoff)
+      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage_memorymappingoff)
         run: |
           if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
@@ -125,14 +116,14 @@ jobs:
       - name: Ccache statistics
         run: ccache -s  
 
-      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage, appimage_memorymappingoff)
+      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage_memorymappingoff)
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
           cp -f *AppImage* ../
           rm -rf ./*
           cp -f ../*AppImage* ./
           rm -f ../*AppImage*
-        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage_memorymappingoff'
         
 
       - uses: actions/upload-artifact@v4
@@ -177,7 +168,7 @@ jobs:
       - name: Get last committer
         run: |
           COMMITTER_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/Vita3K/Vita3K/commits/${{ github.sha }} \
+          https://api.github.com/repos/mrcmunir/Vita3K/commits/${{ github.sha }} \
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
 
@@ -189,7 +180,7 @@ jobs:
           for f in $files; do
               if [[ $f == *ubuntu-22.04-arm ]]
               then
-                if [[ $f == *appimage* ]]
+                if [[ $f == *appimage_memorymappingoff'* ]]
                 then
                   timestamp=$(date +%Y%m%d%H%M%S)
                   cp $(basename $f)/*.AppImage* artifacts/$(basename $f)-${timestamp}.AppImage
