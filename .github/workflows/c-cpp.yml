@@ -76,7 +76,7 @@ jobs:
   
       - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage)
         run: |
-          if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
+          if [[ ! -e linuxdeploy-aarch64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
           fi
           sudo cp -f linuxdeploy-aarch64.AppImage /usr/local/bin/
