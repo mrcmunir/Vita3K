@@ -178,9 +178,9 @@ jobs:
           mkdir artifacts/
           files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
           for f in $files; do
-              if [[ $f == *ubuntu-22.04-arm ]]
+              if [[ $f == *ubuntu-22.04-arm` ]]
               then
-                if [[ $f == *appimage'* ]]
+                if [[ $f == *appimage* ]]
                 then
                   timestamp=$(date +%Y%m%d%H%M%S)
                   cp $(basename $f)/*.AppImage* artifacts/$(basename $f)-${timestamp}.AppImage
