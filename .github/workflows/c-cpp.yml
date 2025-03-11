@@ -330,33 +330,39 @@ jobs:
           mkdir artifacts/
           files=$(find . \( -name "*latest" -o -name "*22.04" \))
           for f in $files; do
-            if [[ $f == *macos-latest ]]; then
+            if [[ $f == *macos-latest ]]
+            then
               cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
-            elif [[ $f == *ubuntu-22.04 ]]; then
+            else
+              if [[ $f == *ubuntu-22.04 ]]
+              then
+                if [[ $f == *appimage* ]]
+                then
+                  cp $(basename $f)/*.AppImage* artifacts/
+                else
+                  rm -f $(basename $f)/*.AppImage*
+                  echo "Compressing $f"
+                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+                fi  
+            elif [[ $f == *ubuntu-22.04-arm ]]; 
+            then
               if [[ $f == *appimage* ]]; then
-                cp $(basename $f)/*.AppImage* artifacts/
+               cp $(basename $f)/*.AppImage* artifacts/
               else
                 rm -f $(basename $f)/*.AppImage*
                 echo "Compressing $f"
                 7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-            fi
-          elif [[ $f == *ubuntu-22.04-arm ]]; then
-            if [[ $f == *appimage* ]]; then
-              cp $(basename $f)/*.AppImage* artifacts/
+              fi
             else
-              rm -f $(basename $f)/*.AppImage*
               echo "Compressing $f"
-              7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+              fi
             fi
-          else
-            echo "Compressing $f"
-            7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
-          fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
           ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
-          if: matrix.repo == 'store'
-          env:
-            GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
+        if: matrix.repo == 'store'
+        env:
+          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
