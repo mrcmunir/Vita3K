@@ -140,7 +140,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: [master, store]
+        repo: [master]
     runs-on: ubuntu-22.04-arm
     concurrency:
       group: create-release
