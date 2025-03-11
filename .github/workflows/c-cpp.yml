@@ -246,7 +246,7 @@ jobs:
       BuildTag: ${{ env.build_variable }}
       ShortSHA: ${{ env.git_short_sha }}
 
-  create-release:
+ create-release:
     needs: [build]
     strategy:
       fail-fast: false
@@ -258,7 +258,7 @@ jobs:
       cancel-in-progress: false
     if: |
       github.ref == 'refs/heads/master' &&
-      github.repository == 'mrcmunir/Vita3K'
+      github.repository == 'Vita3K/Vita3K'
     steps:
       - uses: actions/checkout@v4
 
@@ -277,7 +277,7 @@ jobs:
       - name: Get last committer
         run: |
           COMMITTER_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/mrcmunir/Vita3K/commits/${{ github.sha }} \
+          https://api.github.com/repos/Vita3K/Vita3K/commits/${{ github.sha }} \
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
 
@@ -291,7 +291,7 @@ jobs:
             then
               cp $(basename $f)/$(basename $f).dmg artifacts/macos-latest.dmg
             else
-              if [[ $f == *ubuntu-22.04 ]]
+              if [[ $f == *ubuntu-22.04 ]] 
               then
                 if [[ $f == *appimage* ]]
                 then
@@ -300,26 +300,28 @@ jobs:
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
                   (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
-                if [[ $f == *ubuntu-22.04-arm ]]
+                fi
+            else
+              if [[ $f == *ubuntu-22.04 ]] 
+              then
+                if [[ $f == *appimage* ]]
                 then
-                  if [[ $f == *appimage* ]]
-                  then
-                    cp $(basename $f)/*.AppImage* artifacts/
+                  cp $(basename $f)/*.AppImage* artifacts/
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
                   (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
-                fi
-              else
-                echo "Compressing $f"
-                (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
+                fi  
+           else
+              echo "Compressing $f"
+              (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
               fi
             fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
-          ghr_v0.17.0_linux_amd64/ghr -u mrcmunr -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_amd64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         if: matrix.repo == 'master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -334,7 +336,18 @@ jobs:
             then
               cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
             else
-              if [[ $f == *ubuntu-22.04 ]] || [[ $f == *ubuntu-22-04-arm ]]
+              if [[ $f == *ubuntu-22.04 ]]
+              then
+                if [[ $f == *appimage* ]]
+                then
+                  cp $(basename $f)/*.AppImage* artifacts/
+                else
+                  rm -f $(basename $f)/*.AppImage*
+                  echo "Compressing $f"
+                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+                fi
+            else  
+              if [[ $f == *ubuntu-22.04-arm ]]
               then
                 if [[ $f == *appimage* ]]
                 then
@@ -356,4 +369,4 @@ jobs:
           ghr_v0.17.0_linux_amd64/ghr -u mrcmunir -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
         if: matrix.repo == 'store'
         env:
-          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
