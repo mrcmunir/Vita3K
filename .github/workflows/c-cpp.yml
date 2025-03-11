@@ -246,46 +246,45 @@ jobs:
       BuildTag: ${{ env.build_variable }}
       ShortSHA: ${{ env.git_short_sha }}
 
- create-release:
-    needs: [build]
-    strategy:
+    create-release:
+      needs: [build]
+      strategy:
       fail-fast: false
       matrix:
-        repo: [master, store]
-    runs-on: ubuntu-22.04
+      repo: [master, store]
+      runs-on: ubuntu-22.04
     concurrency:
       group: create-release
       cancel-in-progress: false
-    if: |
-      github.ref == 'refs/heads/master' &&
-      github.repository == 'Vita3K/Vita3K'
-    steps:
-      - uses: actions/checkout@v4
+      if: |
+        github.ref == 'refs/heads/master' &&
+        github.repository == 'Vita3K/Vita3K'
+        steps:
+        - uses: actions/checkout@v4
+        - name: Download Artifacts
+          uses: actions/download-artifact@v4
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Get Build Variable
+        - name: Get Build Variable
         run: echo "Build_Variable=${{ needs.build.outputs.BuildTag }}" >> $GITHUB_ENV
 
-      - name: Get Git Short SHA
+        - name: Get Git Short SHA
         run: echo "Short_SHA=${{ needs.build.outputs.ShortSHA }}" >> $GITHUB_ENV
 
-      - name: Get latest commit message
+        - name: Get latest commit message
         run: echo "Latest_Commit_Message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
 
-      - name: Get last committer
+        - name: Get last committer
         run: |
           COMMITTER_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/Vita3K/Vita3K/commits/${{ github.sha }} \
+          https://api.github.com/repos/mrcmunir/Vita3K/commits/${{ github.sha }} \
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
 
-      - name: Upload
-        shell: bash
-        run: |
-          mkdir artifacts/
-          files=$(find . \( -name "*latest" -o -name "*22.04" \))
+        - name: Upload
+          shell: bash
+          run: |
+           mkdir artifacts/
+            files=$(find . \( -name "*latest" -o -name "*22.04" \))
           for f in $files; do
             if [[ $f == *macos-latest ]]
             then
@@ -302,7 +301,7 @@ jobs:
                   (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
                 fi
             else
-              if [[ $f == *ubuntu-22.04 ]] 
+              if [[ $f == *ubuntu-22.04-arm ]] 
               then
                 if [[ $f == *appimage* ]]
                 then
@@ -326,42 +325,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Make release on store repository
-        shell: bash
-        run: |
-          mkdir artifacts/
-          files=$(find . \( -name "*latest" -o -name "*22.04" \))
-          for f in $files; do
+        - name: Make release on store repository
+          shell: bash
+          run: |
+            mkdir artifacts/
+            files=$(find . \( -name "*latest" -o -name "*22.04" \))
+            for f in $files; do
             if [[ $f == *macos-latest ]]
             then
-              cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
+            cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
             else
-              if [[ $f == *ubuntu-22.04 ]]
-              then
-                if [[ $f == *appimage* ]]
-                then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-                fi
-            else  
-              if [[ $f == *ubuntu-22.04-arm ]]
-              then
-                if [[ $f == *appimage* ]]
-                then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-                fi
-              else
-                echo "Compressing $f"
-                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
-              fi
+            if [[ $f == *ubuntu-22.04 ]]
+            then
+            if [[ $f == *appimage* ]]
+            then
+              cp $(basename $f)/*.AppImage* artifacts/
+            else
+            rm -f $(basename $f)/*.AppImage*
+            echo "Compressing $f"
+            7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
             fi
+            else  
+            if [[ $f == *ubuntu-22.04-arm ]]
+            then
+            if [[ $f == *appimage* ]]
+            then
+             cp $(basename $f)/*.AppImage* artifacts/
+            else
+            rm -f $(basename $f)/*.AppImage*
+            echo "Compressing $f"
+            7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+            fi
+            else
+            echo "Compressing $f"
+            7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+            fi
+          fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
