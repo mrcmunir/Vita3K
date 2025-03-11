@@ -21,15 +21,15 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm]
         config: [Release]
-        version: [memorymappingoff appimage_memorymappingoff]
+        version: [zip, appimage]
         include:
           - os: ubuntu-22.04-arm
-            version: appimage_memorymappingoff
+            version: appimage
             cache_path: ~/.ccache
             extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage  
             cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04-arm
-            version: zip_memorymappingoff
+            version: zip
             extra_cmake_args: -DMEMORY_MAPPING=OFF
             cache_path: ~/.ccache
             cmake_preset: linux-ninja-clang
@@ -74,7 +74,7 @@ jobs:
           sudo make -C SDL2-${SDL2VER} install
         if: matrix.os == 'ubuntu-22.04-arm'
   
-      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage_memorymappingoff)
+      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage)
         run: |
           if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
@@ -116,14 +116,14 @@ jobs:
       - name: Ccache statistics
         run: ccache -s  
 
-      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage_memorymappingoff)
+      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage)
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
           cp -f *AppImage* ../
           rm -rf ./*
           cp -f ../*AppImage* ./
           rm -f ../*AppImage*
-        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage_memorymappingoff'
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
         
 
       - uses: actions/upload-artifact@v4
@@ -180,7 +180,7 @@ jobs:
           for f in $files; do
               if [[ $f == *ubuntu-22.04-arm ]]
               then
-                if [[ $f == *appimage_memorymappingoff'* ]]
+                if [[ $f == *appimage'* ]]
                 then
                   timestamp=$(date +%Y%m%d%H%M%S)
                   cp $(basename $f)/*.AppImage* artifacts/$(basename $f)-${timestamp}.AppImage
