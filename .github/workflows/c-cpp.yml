@@ -174,7 +174,7 @@ jobs:
         shell: bash
         run: |
           mkdir artifacts/
-          files=$(find . \( -name "*latest" -o -name "*22.04*" \))
+          files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
           for f in $files; do
               if [[ $f == *ubuntu-22.04-arm ]]
               then
@@ -195,29 +195,3 @@ jobs:
         if: matrix.repo == 'master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Make release on store repository
-        shell: bash
-        run: |
-          mkdir artifacts/
-          files=$(find . \( -name "*latest" -o -name "*22.04*" \))
-          for f in $files; do
-            if [[ $f == *ubuntu-22.04-arm ]]
-              then
-                if [[ $f == *appimage* ]]
-                  then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-                fi
-           fi
-          done
-          ls -al artifacts/
-          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
-          tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/mrcmunir/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
-        if: matrix.repo == 'store'
-        env:
-          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
