@@ -21,8 +21,8 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm]
         config: [Release]
-        version: [zip, appimage] #Type binary
-        memory_mapping: [ON, OFF] #Control memory_mapping
+        version: [zip, appimage]
+        memory_mapping: [ON, OFF]
         include:
           - os: ubuntu-22.04-arm
             version: zip
@@ -48,28 +48,29 @@ jobs:
             cache_path: ~/.ccache
             extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
             cmake_preset: linux-ninja-clang-appimage
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-   
-      - name: Set up build environment aarch64 (ubuntu-22.04-arm)
+
+      - name: Set up build environment
         run: |
           sudo add-apt-repository -y ppa:mhier/libboost-latest
           sudo add-apt-repository universe
           sudo apt update
           sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2
         if: matrix.os == 'ubuntu-22.04-arm'
- 
+
       - uses: actions/cache@v4
         with:
           path: ${{ matrix.cache_path }}
           key: cache-${{ matrix.os }}-${{ matrix.config }}-${{ github.sha }}
           restore-keys: |
             cache-${{ matrix.os }}-${{ matrix.config }}-
-        
-      - name: Set up SDL 2.30.9 aarch64 (ubuntu-22.04-arm)
+
+      - name: Set up SDL 2.30.9
         run: |
           SDL2VER=2.30.9
           if [[ ! -e ~/.ccache ]]; then
@@ -86,17 +87,16 @@ jobs:
           fi
           sudo make -C SDL2-${SDL2VER} install
         if: matrix.os == 'ubuntu-22.04-arm'
-  
-      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage, zipon)
+
+      - name: Set up linuxdeploy
         run: |
           if [[ ! -e linuxdeploy-aarch64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
           fi
           sudo cp -f linuxdeploy-aarch64.AppImage /usr/local/bin/
           sudo chmod +x /usr/local/bin/linuxdeploy-aarch64.AppImage
-        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage' 
+        if: matrix.version == 'appimage'
 
-        
       - name: Ccache setup
         run: ccache -z
 
@@ -118,8 +118,8 @@ jobs:
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
         if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
-      - name: Bundle Shared Objects aarch64
-        id: bundle_shared_objects-aarch64
+      - name: Bundle Shared Objects
+        id: bundle_shared_objects
         run: |
             cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
             cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
@@ -127,23 +127,20 @@ jobs:
         if: matrix.os == 'ubuntu-22.04-arm'
 
       - name: Ccache statistics
-        run: ccache -s  
+        run: ccache -s
 
-      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage)
+      - name: Clean appimage build
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
           cp -f *AppImage* ../
           rm -rf ./*
           cp -f ../*AppImage* ./
           rm -f ../*AppImage*
-        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
-        
+        if: matrix.version == 'appimage'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ matrix.os }}
-          # path is set up to be <binary_dir>/bin/<config_type> since that's how multi-config
-          # generators work on CMake
+          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ matrix.memory_mapping }}-${{ matrix.os }}
           path: build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
 
     outputs:
@@ -185,7 +182,7 @@ jobs:
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
 
-      - name: Upload
+      - name: Upload to GitHub Releases
         shell: bash
         run: |
           mkdir artifacts/
@@ -200,9 +197,9 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)              
-               fi
-            fi
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)
+                fi
+              fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
