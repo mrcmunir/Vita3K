@@ -184,7 +184,7 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-arm64-latest.zip *)
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-arm64.zip *)
                fi
           fi
           done
