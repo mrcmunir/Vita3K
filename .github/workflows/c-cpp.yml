@@ -118,6 +118,14 @@ jobs:
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
         if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
+      - name: Set Memory Mapping Name
+        run: |
+          if [[ ${{ matrix.memory_mapping }} == 'ON' ]]; then
+            echo "MEMORY_MAPPING_NAME=memory-mapping-enabled" >> $GITHUB_ENV
+          else
+            echo "MEMORY_MAPPING_NAME=memory-mapping-disabled" >> $GITHUB_ENV
+          fi
+
       - name: Bundle Shared Objects
         id: bundle_shared_objects
         run: |
@@ -138,9 +146,14 @@ jobs:
           rm -f ../*AppImage*
         if: matrix.version == 'appimage'
 
+      - name: Compress files
+        run: |
+          (cd $(basename $f) && zip -r ../artifacts/vita3k-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-latest-${{ env.git_short_sha }}.zip *)
+        if: matrix.version == 'zip'
+
       - uses: actions/upload-artifact@v4
         with:
-          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ matrix.memory_mapping }}-${{ matrix.os }}
+          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}
           path: build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
 
     outputs:
