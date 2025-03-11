@@ -178,7 +178,7 @@ jobs:
           mkdir artifacts/
           files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
           for f in $files; do
-              if [[ $f == *ubuntu-22.04-arm` ]]
+              if [[ $f == *ubuntu-22.04-arm ]]
               then
                 if [[ $f == *appimage* ]]
                 then
@@ -190,7 +190,7 @@ jobs:
                   timestamp=$(date +%Y%m%d%H%M%S)
                   (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${timestamp}.zip *)
                fi
-          fi
+            fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
