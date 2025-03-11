@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest, macos-latest]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, windows-latest, macos-latest]
         config: [Release]
         version: [zip, appimage]
         include:
@@ -28,7 +28,16 @@ jobs:
             cache_path: ~/.ccache
             extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-x86_64.AppImage
             cmake_preset: linux-ninja-clang-appimage
+          - os: ubuntu-22.04-arm
+            version: appimage
+            cache_path: ~/.ccache
+            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04
+            version: zip
+            cache_path: ~/.ccache
+            cmake_preset: linux-ninja-clang
+          - os: ubuntu-22.04-arm
             version: zip
             cache_path: ~/.ccache
             cmake_preset: linux-ninja-clang
@@ -64,14 +73,22 @@ jobs:
           ccache --set-config=compiler_check=content
         if: matrix.os == 'macos-latest'
 
-      - name: Set up build environment (ubuntu-22.04)
+      - name: Set up build environment x64 (ubuntu-22.04)
         run: |
           sudo add-apt-repository -y ppa:mhier/libboost-latest
           sudo add-apt-repository universe
           sudo apt update
           sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2
         if: matrix.os == 'ubuntu-22.04'
-
+        
+      - name: Set up build environment aarch64 (ubuntu-22.04-arm)
+        run: |
+          sudo add-apt-repository -y ppa:mhier/libboost-latest
+          sudo add-apt-repository universe
+          sudo apt update
+          sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2
+        if: matrix.os == 'ubuntu-22.04-arm'
+        
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-latest'
  
@@ -88,7 +105,7 @@ jobs:
           choco install ccache
         if: matrix.os == 'windows-latest'
 
-      - name: Set up SDL 2.30.9 (ubuntu-22.04)
+      - name: Set up SDL 2.30.9 x64 (ubuntu-22.04)
         run: |
           SDL2VER=2.30.9
           if [[ ! -e ~/.ccache ]]; then
@@ -105,8 +122,27 @@ jobs:
           fi
           sudo make -C SDL2-${SDL2VER} install
         if: matrix.os == 'ubuntu-22.04'
+        
+      - name: Set up SDL 2.30.9 aarch64 (ubuntu-22.04-arm)
+        run: |
+          SDL2VER=2.30.9
+          if [[ ! -e ~/.ccache ]]; then
+            mkdir ~/.ccache
+          fi  
+          cd ~/.ccache
+          if [[ ! -e SDL2-${SDL2VER} ]]; then
+            curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz
+            tar -xzf SDL2-${SDL2VER}.tar.gz
+            cd SDL2-${SDL2VER}
+            ./configure --prefix=/usr/local
+            make && cd ../
+            rm SDL2-${SDL2VER}.tar.gz
+          fi
+          sudo make -C SDL2-${SDL2VER} install
+        if: matrix.os == 'ubuntu-22.04-arm'
+        
 
-      - name: Set up linuxdeploy (ubuntu-22.04, appimage)
+      - name: Set up linuxdeploy x64 (ubuntu-22.04, appimage)
         run: |
           if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-x86_64.AppImage
@@ -114,7 +150,17 @@ jobs:
           sudo cp -f linuxdeploy-x86_64.AppImage /usr/local/bin/
           sudo chmod +x /usr/local/bin/linuxdeploy-x86_64.AppImage
         if: matrix.os == 'ubuntu-22.04' && matrix.version == 'appimage'
+        
+      - name: Set up linuxdeploy aarch64 (ubuntu-22.04, appimage)
+        run: |
+          if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
+            curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
+          fi
+          sudo cp -f linuxdeploy-aarch64.AppImage /usr/local/bin/
+          sudo chmod +x /usr/local/bin/linuxdeploy-aarch64.AppImage
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
 
+        
       - name: Ccache setup
         run: ccache -z
 
@@ -134,15 +180,23 @@ jobs:
       - name: Set Build Variable
         shell: bash
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
-      - name: Bundle Shared Objects
-        id: bundle_shared_objects
+      - name: Bundle Shared Objects x64
+        id: bundle_shared_objects-x64
         run: |
             cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
             cp /usr/lib/x86_64-linux-gnu/libssl.so.3 ./libssl.so.3
             cp /usr/lib/x86_64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
         if: matrix.os == 'ubuntu-22.04'
+
+      - name: Bundle Shared Objects aarch64
+        id: bundle_shared_objects-aarch64
+        run: |
+            cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+            cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
+            cp /usr/lib/aarch64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
+        if: matrix.os == 'ubuntu-22.04-arm'
 
       - name: Ccache statistics
         run: ccache -s  
@@ -162,7 +216,7 @@ jobs:
           rm -rf Vita3K.app
         if: matrix.os == 'macos-latest'
 
-      - name: Clean appimage build (ubuntu-22.04, appimage)
+      - name: Clean appimage build x64 (ubuntu-22.04, appimage)
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
           cp -f *AppImage* ../
@@ -170,6 +224,16 @@ jobs:
           cp -f ../*AppImage* ./
           rm -f ../*AppImage*
         if: matrix.os == 'ubuntu-22.04' && matrix.version == 'appimage'
+        
+      - name: Clean appimage build aarch64 (ubuntu-22.04-arm, appimage)
+        run: |
+          cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          cp -f *AppImage* ../
+          rm -rf ./*
+          cp -f ../*AppImage* ./
+          rm -f ../*AppImage*
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
+        
 
       - uses: actions/upload-artifact@v4
         with:
@@ -194,7 +258,7 @@ jobs:
       cancel-in-progress: false
     if: |
       github.ref == 'refs/heads/master' &&
-      github.repository == 'Vita3K/Vita3K'
+      github.repository == 'mrcmunir/Vita3K'
     steps:
       - uses: actions/checkout@v4
 
@@ -213,7 +277,7 @@ jobs:
       - name: Get last committer
         run: |
           COMMITTER_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/Vita3K/Vita3K/commits/${{ github.sha }} \
+          https://api.github.com/repos/mrcmunir/Vita3K/commits/${{ github.sha }} \
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
 
@@ -232,6 +296,15 @@ jobs:
                 if [[ $f == *appimage* ]]
                 then
                   cp $(basename $f)/*.AppImage* artifacts/
+                else
+                  rm -f $(basename $f)/*.AppImage*
+                  echo "Compressing $f"
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest.zip *)
+                if [[ $f == *ubuntu-22.04-arm ]]
+                then
+                  if [[ $f == *appimage* ]]
+                  then
+                    cp $(basename $f)/*.AppImage* artifacts/
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
@@ -271,12 +344,22 @@ jobs:
                   echo "Compressing $f"
                   7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
                 fi
-              else
-                echo "Compressing $f"
-                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+               if [[ $f == *ubuntu-22.04-arm ]]
+                then
+                  if [[ $f == *appimage* ]]
+                  then
+                    cp $(basename $f)/*.AppImage* artifacts/
+                  else
+                    rm -f $(basename $f)/*.AppImage*
+                    echo "Compressing $f"
+                    7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+                  fi
+                else
+                  echo "Compressing $f"
+                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+                fi
               fi
-            fi
-          done
+            done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
