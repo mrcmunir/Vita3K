@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm]
         config: [Release]
-        version: [zip, appimage]
+        version: [zip, zip_memorymappingoff appimage, appimage_memorymappingoff]
         include:
           - os: ubuntu-22.04-arm
             version: appimage
@@ -33,12 +33,12 @@ jobs:
             cache_path: ~/.ccache
             cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
-            version: appimage
+            version: appimage_memorymappingoff
             cache_path: ~/.ccache
             extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage  
             cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04-arm
-            version: zip
+            version: zip_memorymappingoff
             extra_cmake_args: -DMEMORY_MAPPING=OFF
             cache_path: ~/.ccache
             cmake_preset: linux-ninja-clang
@@ -195,7 +195,7 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-arm64.zip *)
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest*.zip *)
                fi
           fi
           done
