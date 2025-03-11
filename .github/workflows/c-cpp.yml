@@ -26,12 +26,23 @@ jobs:
           - os: ubuntu-22.04-arm
             version: appimage
             cache_path: ~/.ccache
-            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage 
             cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04-arm
             version: zip
             cache_path: ~/.ccache
             cmake_preset: linux-ninja-clang
+          - os: ubuntu-22.04-arm
+            version: appimage
+            cache_path: ~/.ccache
+            extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage  
+            cmake_preset: linux-ninja-clang-appimage
+          - os: ubuntu-22.04-arm
+            version: zip
+            extra_cmake_args: -DMEMORY_MAPPING=OFF
+            cache_path: ~/.ccache
+            cmake_preset: linux-ninja-clang
+            
 
     steps:
       - uses: actions/checkout@v4
