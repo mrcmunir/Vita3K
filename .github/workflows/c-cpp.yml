@@ -195,7 +195,8 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest*.zip *)
+                  timestamp=$(date +%Y%m%d%H%M%S)
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${timestamp}.zip *)
                fi
           fi
           done
