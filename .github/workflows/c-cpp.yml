@@ -21,20 +21,33 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm]
         config: [Release]
-        version: [zip, appimage]
+        version: [zip, appimage] #Type binary
+        memory_mapping: [ON, OFF] #Control memory_mapping
         include:
           - os: ubuntu-22.04-arm
-            version: appimage
+            version: zip
+            memory_mapping: ON
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage  
-            cmake_preset: linux-ninja-clang-appimage
+            extra_cmake_args: -DMEMORY_MAPPING=ON
+            cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
             version: zip
-            extra_cmake_args: -DMEMORY_MAPPING=OFF
+            memory_mapping: OFF
             cache_path: ~/.ccache
+            extra_cmake_args: -DMEMORY_MAPPING=OFF
             cmake_preset: linux-ninja-clang
-            
-
+          - os: ubuntu-22.04-arm
+            version: appimage
+            memory_mapping: ON
+            cache_path: ~/.ccache
+            extra_cmake_args: -DMEMORY_MAPPING=ON -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            cmake_preset: linux-ninja-clang-appimage
+          - os: ubuntu-22.04-arm
+            version: appimage
+            memory_mapping: OFF
+            cache_path: ~/.ccache
+            extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            cmake_preset: linux-ninja-clang-appimage
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,14 +87,14 @@ jobs:
           sudo make -C SDL2-${SDL2VER} install
         if: matrix.os == 'ubuntu-22.04-arm'
   
-      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage)
+      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage, zipon)
         run: |
           if [[ ! -e linuxdeploy-aarch64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
           fi
           sudo cp -f linuxdeploy-aarch64.AppImage /usr/local/bin/
           sudo chmod +x /usr/local/bin/linuxdeploy-aarch64.AppImage
-        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage' 
 
         
       - name: Ccache setup
@@ -187,7 +200,7 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)              
                fi
             fi
           done
