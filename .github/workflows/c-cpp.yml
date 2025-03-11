@@ -182,13 +182,11 @@ jobs:
               then
                 if [[ $f == *appimage* ]]
                 then
-                  timestamp=$(date +%Y%m%d%H%M%S)
-                  cp $(basename $f)/*.AppImage* artifacts/$(basename $f)-${timestamp}.AppImage
+                  cp $(basename $f)/*.AppImage artifacts/$(basename $f)-${Short_SHA}.AppImage
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f"
-                  timestamp=$(date +%Y%m%d%H%M%S)
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${timestamp}.zip *)
+                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)
                fi
             fi
           done
