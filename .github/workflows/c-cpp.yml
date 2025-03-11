@@ -330,37 +330,24 @@ jobs:
           mkdir artifacts/
           files=$(find . \( -name "*latest" -o -name "*22.04" \))
           for f in $files; do
-            if [[ $f == *macos-latest ]]
-            then
-              cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
+          base_name=$(basename "$f")
+          if [[ "$f" == *macos-latest ]]; 
+          then
+            cp "$base_name/$base_name.dmg" "artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg"
+          elif [[ "$f" == *ubuntu-22.04 ]] || [[ "$f" == *ubuntu-22.04-arm ]]; then
+           
+            if [[ "$f" == *appimage* ]]; then
+              cp "$base_name/*.AppImage*" artifacts/
             else
-              if [[ $f == *ubuntu-22.04 ]]
-              then
-                if [[ $f == *appimage* ]]
-                then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-                fi
-              fi
-               if [[ $f == *ubuntu-22.04-arm ]]
-                then
-                  if [[ $f == *appimage* ]]
-                  then
-                    cp $(basename $f)/*.AppImage* artifacts/
-                  else
-                    rm -f $(basename $f)/*.AppImage*
-                    echo "Compressing $f"
-                    7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
-                  fi
-                fi
-                else
-                  echo "Compressing $f"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
-                fi
-            done
+              rm -f "$base_name/*.AppImage*"
+              echo "Compressing $f"
+              7z a -mx=9 "artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z" "$base_name"
+            fi
+          else
+            echo "Compressing $f"
+            7z a -mx=9 "artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z" "$base_name"
+          fi
+          done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
