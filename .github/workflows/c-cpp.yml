@@ -319,7 +319,7 @@ jobs:
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
-          ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_amd64/ghr -u mrcmunr -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         if: matrix.repo == 'master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -353,7 +353,7 @@ jobs:
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
           tar xfv ghr_v0.17.0_linux_amd64.tar.gz
-          ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
+          ghr_v0.17.0_linux_amd64/ghr -u mrcmunir -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
         if: matrix.repo == 'store'
         env:
           GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }} 
