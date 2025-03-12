@@ -177,7 +177,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/
-          find downloaded_artifacts -type f -exec mv {} artifacts/ \;
+          # Filtrar solo los archivos deseados
+          find downloaded_artifacts -type f \( -name "*memory-mapping-enabled.zip" -o -name "*memory-mapping-disabled.zip" -o -name "*AppImage-memory-mapping-enabled.AppImage" -o -name "*AppImage-memory-mapping-disabled.AppImage" \) -exec mv {} artifacts/ \;
 
           echo "Contenido de artifacts/"
           ls -al artifacts/
