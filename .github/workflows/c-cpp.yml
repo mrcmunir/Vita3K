@@ -231,7 +231,7 @@ jobs:
           # Subir los artefactos a GitHub Releases
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         if: matrix.repo == 'master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
