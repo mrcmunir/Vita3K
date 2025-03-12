@@ -186,24 +186,22 @@ jobs:
           https://api.github.com/repos/mrcmunir/Vita3K/commits/${{ github.sha }} \
           | jq -r '.commit.author.name')
           echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
-      - name: Upload to GitHub Releases
+      - name: Upload
         shell: bash
         run: |
-          mkdir artifacts/
+          mkdir -p artifacts/
           files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
           for f in $files; do
-              if [[ $f == *ubuntu-22.04-arm ]]
-              then
-                if [[ $f == *appimage* ]]
-                then
-                  base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g') 
-                  cp $(basename $f)/*.AppImage artifacts/${base_name}-${Short_SHA}.AppImage
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  cd $(basename $f) && zip -r ../artifacts/vita3k-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-latest-${{ env.git_short_sha }}.zip *)
-                fi
+            if [[ $f == *ubuntu-22.04-arm* ]]; then
+              if [[ $f == *appimage* ]]; then
+                base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g')
+                cp $(basename $f)/*.AppImage artifacts/${base_name}-${Short_SHA}.AppImage
+              else
+                rm -f $(basename $f)/*.AppImage*
+                echo "Compressing $f"
+                (cd $(basename $f) && zip -r ../artifacts/vita3k-$(basename $f | cut -d "-" -f 4)-latest-${Short_SHA}.zip ./*)
               fi
+            fi
           done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
