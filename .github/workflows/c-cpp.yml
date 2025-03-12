@@ -242,8 +242,24 @@ jobs:
           MEMORY_MAPPING_NAME: ${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}
 
       - name: Delete old releases
-        uses: ncipollo/delete-release@v1
-        with:
-          keep-latest: 10
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # Obtener la lista de releases usando la API de GitHub
+          releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[] | .id')
+
+          # Convertir la lista de releases en un array
+          releases=($releases)
+
+          # Mantener solo las últimas 10 releases
+          if [[ ${#releases[@]} -gt 10 ]]; then
+            for ((i=0; i<${#releases[@]}-10; i++)); do
+              release_id=${releases[$i]}
+              echo "Eliminando release con ID: $release_id"
+              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
+            done
+          else
+            echo "No hay releases antiguos para eliminar."
+          fi
+        
