@@ -151,6 +151,7 @@ jobs:
     outputs:
       BuildTag: ${{ env.build_variable }}
       ShortSHA: ${{ env.git_short_sha }}
+      MEMORY_MAPPING_NAME: ${{ env.MEMORY_MAPPING_NAME }}
 
   create-release:
     needs: [build]
@@ -172,42 +173,43 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded_artifacts
-      - name: List downloaded artifacts
-        run: |
-          echo "Contenido de downloaded_artifacts:"
-          find downloaded_artifacts -type f
 
       - name: Upload
         shell: bash
         run: |
           mkdir -p artifacts/
+
+          echo "Valor de MEMORY_MAPPING_NAME: $MEMORY_MAPPING_NAME"
+          suffix="${MEMORY_MAPPING_NAME#memory-mapping-}"
+          echo "Sufijo extraído: $suffix"
+
           echo "Archivos encontrados:"
           find downloaded_artifacts -type f \( \
-          -iname "Vita3K-aarch64.AppImage" -o \
-          -iname "Vita3K-aarch64.AppImage.zsync" -o \
-          -iname "vita3k.zip" \
+            -iname "Vita3K-aarch64.AppImage" -o \
+            -iname "Vita3K-aarch64.AppImage.zsync" -o \
+            -iname "vita3k.zip" \
           \) | while read -r file; do
-          echo "Procesando archivo: $file"
-          dir_name=$(basename "$(dirname "$file")")
-          echo "Nombre del directorio: $dir_name"
-          if [[ "$file" =~ *.AppImage]]; then
-            if [[ "$dir_name" =~ memory-mapping-disabled ]]; then
-              echo "Copiando $file a artifacts/AppImage-memory-mapping-disabled.AppImage"
-              cp "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage"
+            echo "Procesando archivo: $file"
             
-            elif [[ "$dir_name" =~ memory-mapping-enabled ]]; then
-              echo "Copiando $file a artifacts/AppImage-memory-mapping-enabled.AppImage"
-              cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage"
+            # Determinar si es un archivo .AppImage, .zsync o .zip
+            if [[ "$file" =~ \.AppImage$ ]]; then
+              echo "Copiando $file a artifacts/AppImage-memory-mapping-$suffix.AppImage"
+              cp "$file" "artifacts/AppImage-memory-mapping-$suffix.AppImage"
+            elif [[ "$file" =~ \.zsync$ ]]; then
+              echo "Copiando $file a artifacts/AppImage-memory-mapping-$suffix.AppImage.zsync"
+              cp "$file" "artifacts/AppImage-memory-mapping-$suffix.AppImage.zsync"
+            elif [[ "$file" =~ \.zip$ ]]; then
+              echo "Copiando $file a artifacts/memory-mapping-$suffix.zip"
+              cp "$file" "artifacts/memory-mapping-$suffix.zip"
             fi
-            
-          fi
           done
+
           echo "Contenido de artifacts/:"
           ls -al artifacts/
-          
-            wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
-            tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-            ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
-        if: matrix.repo == 'master'
+
+          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
+          tar xfv ghr_v0.17.0_linux_arm64.tar.gz
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ needs.build.outputs.BuildTag }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MEMORY_MAPPING_NAME: ${{ needs.build.outputs.MEMORY_MAPPING_NAME }}
