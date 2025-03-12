@@ -199,7 +199,7 @@ jobs:
               else
                 rm -f $(basename $f)/*.AppImage*
                 echo "Compressing $f"
-                (cd $(basename $f) && zip -r ../artifacts/vita3k-$(basename $f | cut -d "-" -f 4)-latest-${Short_SHA}.zip ./*)
+                (cd $(basename $f) && zip -r ../artifacts/vita3k-$(basename $f | cut -d "-" -f 4)-${MEMORY_MAPPING_NAME}-${Short_SHA}.zip ./*)
               fi
             fi
           done
