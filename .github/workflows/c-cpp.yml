@@ -114,7 +114,7 @@ jobs:
       - name: Set Build Variable
         shell: bash
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
-        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
+        if:  matrix.os == 'ubuntu-22.04-arm'
 
       - name: Set Memory Mapping Name
         run: |
