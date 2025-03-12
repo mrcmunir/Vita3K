@@ -193,13 +193,13 @@ jobs:
           files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
           for f in $files; do
             if [[ $f == *ubuntu-22.04-arm* ]]; then
+              base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g')  # Elimina el Short_SHA del nombre base
               if [[ $f == *appimage* ]]; then
-                base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g')
-                cp $(basename $f)/*.AppImage artifacts/${base_name}-${Short_SHA}.AppImage
+                cp $(basename $f)/*.AppImage artifacts/vita3k-appimage-${MEMORY_MAPPING_NAME}-${Short_SHA}.AppImage
               else
                 rm -f $(basename $f)/*.AppImage*
                 echo "Compressing $f"
-                (cd $(basename $f) && zip -r ../artifacts/vita3k-$(basename $f | cut -d "-" -f 4)-${MEMORY_MAPPING_NAME}-${Short_SHA}.zip ./*)
+                (cd $(basename $f) && zip -r ../artifacts/vita3k-zip-${MEMORY_MAPPING_NAME}-${Short_SHA}.zip ./*)
               fi
             fi
           done
