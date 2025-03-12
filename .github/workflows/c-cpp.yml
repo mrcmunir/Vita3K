@@ -175,25 +175,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           path: downloaded_artifacts
           pattern: vita3k-*-${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}-*
 
+      - name: Debug downloaded artifacts structure
+        run: |
+          echo "Estructura de downloaded_artifacts:"
+          find downloaded_artifacts -type d | while read -r dir; do
+            echo "Directorio: $dir"
+            ls -al "$dir"
+          done
+
       - name: Remove AppImage files (for zip builds)
         if: matrix.version == 'zip'
         run: |
+          echo "Buscando directorios para eliminar archivos .AppImage..."
           find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
+            echo "Eliminando archivos .AppImage en $dir"
             rm -f "$dir"/*.AppImage*
+            echo "Contenido de $dir después de eliminar .AppImage:"
+            ls -al "$dir"
           done
 
       - name: Compress folder to ZIP (for zip builds)
         if: matrix.version == 'zip'
         run: |
+          echo "Buscando directorios para comprimir..."
           find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
             echo "Comprimiendo $dir"
-            (cd "$dir" && zip -r "../artifacts/$(basename "$dir" | cut -d "-" -f 4)-latest-${{ env.MEMORY_MAPPING_NAME }}.zip" ./*)
+            (cd "$dir" && zip -r "../../artifacts/$(basename "$dir" | cut -d "-" -f 4)-latest-${{ env.MEMORY_MAPPING_NAME }}.zip" ./*)
+            echo "Archivo .zip generado en artifacts/:"
+            ls -al "../../artifacts/"
           done
 
       - name: List files in artifacts directory
@@ -204,8 +222,6 @@ jobs:
       - name: Upload
         shell: bash
         run: |
-          mkdir -p artifacts/
-
           echo "Valor de MEMORY_MAPPING_NAME: $MEMORY_MAPPING_NAME"
           suffix="${MEMORY_MAPPING_NAME#memory-mapping-}"
           echo "Sufijo extraído: $suffix"
@@ -262,4 +278,3 @@ jobs:
           else
             echo "No hay releases antiguos para eliminar."
           fi
-        
