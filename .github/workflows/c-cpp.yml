@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Vita3K Optimized CI
 
 on: [push, pull_request]
 
@@ -40,13 +40,13 @@ jobs:
             version: appimage
             memory_mapping: ON
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18  -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
             cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04-arm
             version: appimage
             memory_mapping: OFF
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF  -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18  -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            extra_cmake_args: -DMEMORY_MAPPING=OFF -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
             cmake_preset: linux-ninja-clang-appimage
 
     steps:
@@ -59,15 +59,14 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x ./llvm.sh
-          sudo ./llvm.sh 18 
+          sudo ./llvm.sh 18
           export CXX=clang++-18
           export CC=clang-18
-          
+
           sudo add-apt-repository -y ppa:mhier/libboost-latest
           sudo add-apt-repository universe
           sudo apt update
           sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2 zip
-        if: matrix.os == 'ubuntu-22.04-arm'
 
       - uses: actions/cache@v4
         with:
@@ -75,12 +74,11 @@ jobs:
           key: cache-${{ matrix.os }}-${{ matrix.config }}-${{ github.sha }}
           restore-keys: |
             cache-${{ matrix.os }}-${{ matrix.config }}-
+
       - name: Set up SDL 2.30.9
         run: |
           SDL2VER=2.30.9
-          if [[ ! -e ~/.ccache ]]; then
-            mkdir ~/.ccache
-          fi  
+          mkdir -p ~/.ccache
           cd ~/.ccache
           if [[ ! -e SDL2-${SDL2VER} ]]; then
             curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz
@@ -91,7 +89,6 @@ jobs:
             rm SDL2-${SDL2VER}.tar.gz
           fi
           sudo make -C SDL2-${SDL2VER} install
-        if: matrix.os == 'ubuntu-22.04-arm'
 
       - name: Set up linuxdeploy
         run: |
@@ -109,6 +106,7 @@ jobs:
         run: |
           cmake ${{ matrix.extra_cmake_args }} --preset ${{ matrix.cmake_preset }}
           cmake --build build/${{ matrix.cmake_preset }} --config ${{ matrix.config }}
+
       - name: CTest
         working-directory: build/${{ matrix.cmake_preset }}
         run: ctest --build-config ${{ matrix.config }} --output-on-failure
@@ -120,7 +118,6 @@ jobs:
       - name: Set Build Variable
         shell: bash
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
-        if:  matrix.os == 'ubuntu-22.04-arm'
 
       - name: Set Memory Mapping Name
         run: |
@@ -133,10 +130,9 @@ jobs:
       - name: Bundle Shared Objects
         id: bundle_shared_objects
         run: |
-            cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
-            cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
-            cp /usr/lib/aarch64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
-        if: matrix.os == 'ubuntu-22.04-arm'
+          cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
+          cp /usr/lib/aarch64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
 
       - name: Ccache statistics
         run: ccache -s
@@ -150,10 +146,18 @@ jobs:
           rm -f ../*AppImage*
         if: matrix.version == 'appimage'
 
+      - name: Create ZIP (for zip builds)
+        if: matrix.version == 'zip'
+        run: |
+          cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          zip -r vita3k-${{ env.git_short_sha }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}.zip .
+
       - uses: actions/upload-artifact@v4
         with:
           name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}
-          path: build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          path: |
+            build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.AppImage*
+            build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.zip
 
     outputs:
       BuildTag: ${{ env.build_variable }}
@@ -164,7 +168,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        memory_mapping: [ON, OFF]  # Ejecutar para ambas configuraciones
+        memory_mapping: [ON, OFF]
     runs-on: ubuntu-22.04-arm
     concurrency:
       group: create-release
@@ -187,37 +191,7 @@ jobs:
       - name: Debug downloaded artifacts structure
         run: |
           echo "Estructura de downloaded_artifacts:"
-          find downloaded_artifacts -type d | while read -r dir; do
-            echo "Directorio: $dir"
-            ls -al "$dir"
-          done
-
-      - name: Remove AppImage files (for zip builds)
-        if: matrix.version == 'zip'
-        run: |
-          echo "Buscando directorios para eliminar archivos .AppImage..."
-          find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
-            echo "Eliminando archivos .AppImage en $dir"
-            rm -f "$dir"/*.AppImage*
-            echo "Contenido de $dir después de eliminar .AppImage:"
-            ls -al "$dir"
-          done
-
-      - name: Compress folder to ZIP (for zip builds)
-        if: matrix.version == 'zip'
-        run: |
-          echo "Buscando directorios para comprimir..."
-          find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
-            echo "Comprimiendo $dir"
-            (cd "$dir" && zip -r "../../artifacts/$(basename "$dir" | cut -d "-" -f 4)-latest-${{ env.MEMORY_MAPPING_NAME }}.zip" ./*)
-            echo "Archivo .zip generado en artifacts/:"
-            ls -al "../../artifacts/"
-          done
-
-      - name: List files in artifacts directory
-        run: |
-          echo "Contenido de artifacts/:"
-          ls -al artifacts/
+          tree downloaded_artifacts
 
       - name: Upload
         shell: bash
@@ -226,30 +200,29 @@ jobs:
           suffix="${MEMORY_MAPPING_NAME#memory-mapping-}"
           echo "Sufijo extraído: $suffix"
 
-          echo "Archivos encontrados:"
-          find artifacts -type f \( \
-            -iname "Vita3K-aarch64.AppImage" -o \
-            -iname "Vita3K-aarch64.AppImage.zsync" -o \
+          # Mover archivos a la carpeta artifacts
+          mkdir -p artifacts
+          find downloaded_artifacts -type f \( \
+            -iname "*.AppImage" -o \
+            -iname "*.AppImage.zsync" -o \
             -iname "*.zip" \
-          \) | while read -r file; do
-            echo "Procesando archivo: $file"
-            
-            # Determinar si es un archivo .AppImage, .zsync o .zip
-            if [[ "$file" =~ \.AppImage$ ]]; then
-              echo "Copiando $file a artifacts/AppImage-memory-mapping-$suffix.AppImage"
-              cp "$file" "artifacts/AppImage-memory-mapping-$suffix.AppImage"
-            elif [[ "$file" =~ \.zsync$ ]]; then
-              echo "Copiando $file a artifacts/AppImage-memory-mapping-$suffix.AppImage.zsync"
-              cp "$file" "artifacts/AppImage-memory-mapping-$suffix.AppImage.zsync"
-            elif [[ "$file" =~ \.zip$ ]]; then
-              echo "Copiando $file a artifacts/memory-mapping-$suffix.zip"
-              cp "$file" "artifacts/memory-mapping-$suffix.zip"
+          \) -exec cp {} artifacts/ \;
+
+          # Renombrar archivos AppImage y ZIP según el sufijo
+          for file in artifacts/*; do
+            if [[ "$file" == *"memory-mapping-enabled"* ]]; then
+              new_name="${file//memory-mapping-enabled/$suffix}"
+              mv "$file" "$new_name"
+            elif [[ "$file" == *"memory-mapping-disabled"* ]]; then
+              new_name="${file//memory-mapping-disabled/$suffix}"
+              mv "$file" "$new_name"
             fi
           done
 
           echo "Contenido de artifacts/:"
           ls -al artifacts/
 
+          # Subir release usando ghr
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
           ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ needs.build.outputs.BuildTag }}")" "build-${{ env.git_short_sha }}" artifacts/
@@ -260,14 +233,9 @@ jobs:
       - name: Delete old releases
         shell: bash
         run: |
-          # Obtener la lista de releases usando la API de GitHub
           releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[] | .id')
-
-          # Convertir la lista de releases en un array
           releases=($releases)
-
-          # Mantener solo las últimas 10 releases
           if [[ ${#releases[@]} -gt 10 ]]; then
             for ((i=0; i<${#releases[@]}-10; i++)); do
               release_id=${releases[$i]}
