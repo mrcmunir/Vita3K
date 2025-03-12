@@ -180,33 +180,35 @@ jobs:
       - name: Upload
         shell: bash
         run: |
-          mkdir -p artifacts/
-          find downloaded_artifacts -type f \( \
-          -name "Vita3K-aarch64.AppImage" -o \
-          -name "Vita3K.zip" \
-          \) -exec cp {} artifacts/ \;
-          for file in artifacts/*; do
-           if [[ "$file" == *"Vita3K-aarch64.AppImage"* ]]; then
-              if [[ "$file" == *"memory-mapping-disabled"* ]]; then
-                mv "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage"
-            elif [[ "$file" == *"memory-mapping-enabled"* ]]; then
-                mv "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage"
-            fi
-            elif [[ "$file" == *"Vita3K.zip"* ]]; then
-            if [[ "$file" == *"memory-mapping-disabled"* ]]; then
-                mv "$file" "artifacts/memory-mapping-disabled.zip"
-            elif [[ "$file" == *"memory-mapping-enabled"* ]]; then
-            mv "$file" "artifacts/memory-mapping-enabled.zip"
-            fi
-          fi
-          done
-          echo "Contenido de artifacts/:"
-          ls -al artifacts/
+           mkdir -p artifacts/
+           find downloaded_artifacts -type f \( \
+            -name "Vita3K-aarch64.AppImage" -o \
+            -name "Vita3K.zip" \
+            \) -exec cp {} artifacts/ \;
 
-          # Subir los artefactos a GitHub Releases
-          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
-          tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+           
+            for file in artifacts/*; do
+              if [[ "$file" == *"Vita3K-aarch64.AppImage"* ]]; then
+                if [[ "$file" == *"memory-mapping-disabled"* ]]; then
+                    mv "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage"
+                elif [[ "$file" == *"memory-mapping-enabled"* ]]; then
+                    mv "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage"
+              fi
+              elif [[ "$file" == *"Vita3K.zip"* ]]; then
+                if [[ "$file" == *"memory-mapping-disabled"* ]]; then
+                  mv "$file" "artifacts/memory-mapping-disabled.zip"
+                 elif [[ "$file" == *"memory-mapping-enabled"* ]]; then
+                  mv "$file" "artifacts/memory-mapping-enabled.zip"
+                fi
+              fi
+            done
+            echo "Contenido de artifacts/:"
+            ls -al artifacts/
+
+          
+            wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
+            tar xfv ghr_v0.17.0_linux_arm64.tar.gz
+            ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         if: matrix.repo == 'master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
