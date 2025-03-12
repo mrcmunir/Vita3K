@@ -146,15 +146,24 @@ jobs:
           rm -f ../*AppImage*
         if: matrix.version == 'appimage'
 
-      - name: Compress files
+      - name: Prepare artifacts directory
+        run: mkdir -p artifacts/
+
+      - name: Compress files (ZIP)
         run: |
-          (cd $(basename $f) && zip -r ../artifacts/vita3k-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-latest-${{ env.git_short_sha }}.zip *)
+          (cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }} && zip -r ../../../../artifacts/vita3k-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-latest-${{ env.git_short_sha }}.zip ./*)
         if: matrix.version == 'zip'
+
+      - name: Copy AppImage files
+        run: |
+          cp build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.AppImage artifacts/vita3k-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-latest-${{ env.git_short_sha }}.AppImage
+        if: matrix.version == 'appimage'
 
       - uses: actions/upload-artifact@v4
         with:
           name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}
-          path: build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          path: artifacts/
+          if-no-files-found: error
 
     outputs:
       BuildTag: ${{ env.build_variable }}
@@ -178,6 +187,8 @@ jobs:
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
 
       - name: Get Build Variable
         run: echo "Build_Variable=${{ needs.build.outputs.BuildTag }}" >> $GITHUB_ENV
@@ -198,22 +209,6 @@ jobs:
       - name: Upload to GitHub Releases
         shell: bash
         run: |
-          mkdir artifacts/
-          files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
-          for f in $files; do
-              if [[ $f == *ubuntu-22.04-arm ]]
-              then
-                if [[ $f == *appimage* ]]
-                then
-                  base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g') 
-                  cp $(basename $f)/*.AppImage artifacts/${base_name}-${Short_SHA}.AppImage
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f"
-                  (cd $(basename $f) && zip -r ../artifacts/$(basename $f  | cut -d "-" -f 4)-latest-${Short_SHA}.zip *)
-                fi
-              fi
-          done
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
