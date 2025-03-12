@@ -176,12 +176,18 @@ jobs:
       - name: Move Artifacts to Release Folder
         shell: bash
         run: |
-          mkdir -p artifacts/
+         mkdir -p artifacts/
           # Filtrar solo los archivos deseados
-          find downloaded_artifacts -type f \( -name "*memory-mapping-enabled.zip" -o -name "*memory-mapping-disabled.zip" -o -name "*AppImage-memory-mapping-enabled.AppImage" -o -name "*AppImage-memory-mapping-disabled.AppImage" \) -exec mv {} artifacts/ \;
+          find downloaded_artifacts -type f \( \
+            -name "vita3k-*-appimage-memory-mapping-disabled-ubuntu-22.04-arm" -o \
+            -name "vita3k-*-appimage-memory-mapping-enabled-ubuntu-22.04-arm" -o \
+            -name "vita3k-*-zip-memory-mapping-disabled-ubuntu-22.04-arm" -o \
+            -name "vita3k-*-zip-memory-mapping-enabled-ubuntu-22.04-arm" \
+          \) -exec mv {} artifacts/ \;
 
           echo "Contenido de artifacts/"
           ls -al artifacts/
+          
       - name: Get Build Variable
         run: echo "Build_Variable=${{ needs.build.outputs.BuildTag }}" >> $GITHUB_ENV
 
