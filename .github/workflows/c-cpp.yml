@@ -129,6 +129,7 @@ jobs:
           else
             echo "MEMORY_MAPPING_NAME=memory-mapping-disabled" >> $GITHUB_ENV
           fi
+
       - name: Bundle Shared Objects
         id: bundle_shared_objects
         run: |
@@ -180,6 +181,20 @@ jobs:
           path: downloaded_artifacts
           pattern: vita3k-*-${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}-*
 
+      - name: Remove AppImage files (for zip builds)
+        if: matrix.version == 'zip'
+        run: |
+          find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
+            rm -f "$dir"/*.AppImage*
+          done
+
+      - name: Compress folder to ZIP (for zip builds)
+        if: matrix.version == 'zip'
+        run: |
+          find downloaded_artifacts -type d -name "*zip*" | while read -r dir; do
+            (cd "$dir" && zip -r "../artifacts/$(basename "$dir" | cut -d "-" -f 4)-latest-${{ env.MEMORY_MAPPING_NAME }}.zip" ./*)
+          done
+
       - name: Upload
         shell: bash
         run: |
@@ -193,7 +208,7 @@ jobs:
           find downloaded_artifacts -type f \( \
             -iname "Vita3K-aarch64.AppImage" -o \
             -iname "Vita3K-aarch64.AppImage.zsync" -o \
-            -iname "vita3k.zip" \
+            -iname "*.zip" \
           \) | while read -r file; do
             echo "Procesando archivo: $file"
             
