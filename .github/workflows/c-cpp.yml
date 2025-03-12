@@ -242,9 +242,8 @@ jobs:
           MEMORY_MAPPING_NAME: ${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}
 
       - name: Delete old releases
-        uses: actions/delete-release@v1
+        uses: ncipollo/delete-release@v1
         with:
-          delete-tag: true
           keep-latest: 10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
