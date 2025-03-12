@@ -185,32 +185,22 @@ jobs:
           find downloaded_artifacts -type f \( \
           -iname "Vita3K-aarch64.AppImage" -o \
           -iname "Vita3K-aarch64.AppImage.zsync" -o \
-          -iname "Vita3K.zip" \
+          -iname "vita3k.zip" \
           \) | while read -r file; do
           echo "Procesando archivo: $file"
           dir_name=$(basename "$(dirname "$file")")
           echo "Nombre del directorio: $dir_name"
-      
-  
-           if [[ "$file" =~ [aA][pP][pP][iI][mM][aA][gG][eE] ]]; then
-              if [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[dD][iI][sS][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage"
-              elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage"
-              fi
-          elif [[ "$file" =~ [zZ][sS][yY][nN][cC] ]]; then
-              if [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[dD][iI][sS][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage.zsync"
-          elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage.zsync"
-              fi
-          elif [[ "$file" =~ [zZ][iI][pP] ]]; then
-              if [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[dD][iI][sS][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/memory-mapping-disabled.zip"
-              elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
-                cp "$file" "artifacts/memory-mapping-enabled.zip"
-              fi
+          if [[ "$file" =~ *.AppImage]]; then
+            if [[ "$dir_name" =~ memory-mapping-disabled ]]; then
+              echo "Copiando $file a artifacts/AppImage-memory-mapping-disabled.AppImage"
+              cp "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage"
+            
+            elif [[ "$dir_name" =~ memory-mapping-enabled ]]; then
+              echo "Copiando $file a artifacts/AppImage-memory-mapping-enabled.AppImage"
+              cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage"
             fi
+            
+          fi
           done
           echo "Contenido de artifacts/:"
           ls -al artifacts/
