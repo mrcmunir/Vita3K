@@ -156,9 +156,8 @@ jobs:
   create-release:
     needs: [build]
     strategy:
-      fail-fast: false
       matrix:
-        repo: [master]
+        memory_mapping: [ON, OFF]  # Ejecutar para ambas configuraciones
     runs-on: ubuntu-22.04-arm
     concurrency:
       group: create-release
@@ -173,6 +172,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded_artifacts
+          pattern: vita3k-*-${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}-*
 
       - name: Upload
         shell: bash
@@ -212,4 +212,4 @@ jobs:
           ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ needs.build.outputs.BuildTag }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MEMORY_MAPPING_NAME: ${{ needs.build.outputs.MEMORY_MAPPING_NAME }}
+          MEMORY_MAPPING_NAME: ${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}
