@@ -202,14 +202,16 @@ jobs:
               if [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[dD][iI][sS][aA][bB][lL][eE][dD] ]]; then
                 cp "$file" "artifacts/AppImage-memory-mapping-disabled.AppImage.zsync"
           elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
-              cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage.zsync"
-          fi
+                cp "$file" "artifacts/AppImage-memory-mapping-enabled.AppImage.zsync"
+              fi
           elif [[ "$file" =~ [zZ][iI][pP] ]]; then
               if [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[dD][iI][sS][aA][bB][lL][eE][dD] ]]; then
                 cp "$file" "artifacts/memory-mapping-disabled.zip"
-          elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
-          cp "$file" "artifacts/memory-mapping-enabled.zip"
-
+              elif [[ "$dir_name" =~ [mM][eE][mM][oO][rR][yY]-[mM][aA][pP][pP][iI][nN][gG]-[eE][nN][aA][bB][lL][eE][dD] ]]; then
+                cp "$file" "artifacts/memory-mapping-enabled.zip"
+              fi
+            fi
+          done
           echo "Contenido de artifacts/:"
           ls -al artifacts/
           
