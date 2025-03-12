@@ -189,44 +189,52 @@ jobs:
       - name: Upload
         shell: bash
         run: |
-          mkdir -p artifacts/
-          files=$(find . \( -name "*latest*" -o -name "*22.04*" \))
-          for f in $files; do
-            if [[ $f == *ubuntu-22.04-arm* ]] 
-            then
-              base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g')  # Elimina el Short_SHA del nombre base
+          mkdir -p artifacts/appimage
+          mkdir -p artifacts/zip
 
-              # AppImage con memory-mapping ON
-              if [[ $f == *appimage* && $MEMORY_MAPPING_NAME == "memory-mapping-enabled" ]] 
+          echo "Estructura de directorios:"
+          find build/ -type d
+          files=$(find build/ -type d \( -name "*latest*" -o -name "*22.04*" \))
+          for f in $files; do
+            echo "Procesando directorio: $f"
+            if [[ $f == *ubuntu-22.04-arm* ]]; then
+              base_name=$(basename $f | sed 's/-'"${Short_SHA}"'//g')
+              echo "Base name: $base_name"
+
+              # Caso 1: AppImage con memory-mapping ON
+              if [[ $f == *appimage* && $MEMORY_MAPPING_NAME == "memory-mapping-enabled" ]]
               then
-                echo "Appimage memory-mapping ON)"
-                cp $(basename $f)/*.AppImage artifacts/vita3k-appimage-memory-mapping-enabled-${Short_SHA}.AppImage
+                echo "Copiando AppImage con memory-mapping ON..."
+                cp $f/*.AppImage artifacts/appimage/vita3k-appimage-memory-mapping-enabled-${Short_SHA}.AppImage
               fi
 
-              # AppImage con memory-mapping OFF
+              # Caso 2: AppImage con memory-mapping OFF
               if [[ $f == *appimage* && $MEMORY_MAPPING_NAME == "memory-mapping-disabled" ]]
               then
-                echo "Appimage memory-mapping OFF)"
-                cp $(basename $f)/*.AppImage artifacts/vita3k-appimage-memory-mapping-disabled-${Short_SHA}.AppImage
+                echo "Copiando AppImage con memory-mapping OFF..."
+                cp $f/*.AppImage artifacts/appimage/vita3k-appimage-memory-mapping-disabled-${Short_SHA}.AppImage
               fi
 
-               # ZIP con memory-mapping ON
+              # Caso 3: ZIP con memory-mapping ON
               if [[ $f != *appimage* && $MEMORY_MAPPING_NAME == "memory-mapping-enabled" ]]
               then
-                echo "Compressing $f (memory-mapping ON)"
-                (cd $(basename $f) && zip -r ../artifacts/vita3k-zip-memory-mapping-enabled-${Short_SHA}.zip ./*)
+                echo "Comprimiendo ZIP con memory-mapping ON..."
+                (cd $f && zip -r ../../artifacts/zip/vita3k-zip-memory-mapping-enabled-${Short_SHA}.zip ./*)
               fi
 
-               # ZIP con memory-mapping OFF
+              # Caso 4: ZIP con memory-mapping OFF
               if [[ $f != *appimage* && $MEMORY_MAPPING_NAME == "memory-mapping-disabled" ]]
               then
-                echo "Compressing $f (memory-mapping OFF)"
-                (cd $(basename $f) && zip -r ../artifacts/vita3k-zip-memory-mapping-disabled-${Short_SHA}.zip ./*)
+                echo "Comprimiendo ZIP con memory-mapping OFF..."
+                (cd $f && zip -r ../../artifacts/zip/vita3k-zip-memory-mapping-disabled-${Short_SHA}.zip ./*)
               fi
             fi
           done
-          # Verificar los artefactos generados
-          ls -al artifacts/
+
+          echo "Contenido de artifacts/appimage:"
+          ls -al artifacts/appimage/
+          echo "Contenido de artifacts/zip:"
+          ls -al artifacts/zip/
 
           # Subir los artefactos a GitHub Releases
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
