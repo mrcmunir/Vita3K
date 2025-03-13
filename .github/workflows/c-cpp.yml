@@ -172,7 +172,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
 
       - name: Bundle Shared Objects (aarch64)
-        id: bundle_shared_objects_arm64
+        id: bundle_shared_objects_aarch64
         run: |
             cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
             cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
