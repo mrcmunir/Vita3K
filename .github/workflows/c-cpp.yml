@@ -191,11 +191,17 @@ jobs:
           mkdir -p artifacts
           for dir in downloaded_artifacts/*; do
             if [ -d "$dir" ]; then
+              # Extraer el tipo de build (appimage o zip) y el estado de memory_mapping (enabled o disabled)
               build_type=$(basename "$dir" | awk -F'-' '{print $3}')  # appimage o zip
               memory_mapping=$(basename "$dir" | awk -F'-' '{print $5}')  # enabled o disabled
               for file in "$dir"/*.zip; do
                 if [ -f "$file" ]; then
-                  ew_name=$(basename "$file" .zip)-$build_type-$memory_mapping.zip
+                  # Renombrar el archivo para que sea más corto
+                  if [[ "$build_type" == "appimage" ]]; then
+                    new_name="vita3k-${{ env.git_short_sha }}-memory-mapping-$memory_mapping-appimage.zip"
+                  else
+                    new_name="vita3k-${{ env.git_short_sha }}-memory-mapping-$memory_mapping-ubuntu-22.04-arm.zip"
+                  fi
                   cp "$file" "artifacts/$new_name"
                 fi
               done
