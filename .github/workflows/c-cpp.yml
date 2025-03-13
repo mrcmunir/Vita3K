@@ -195,7 +195,7 @@ jobs:
               for file in "$dir"/*.zip; do
                 if [ -f "$file" ]; then
                   if [[ "$build_type" == "appimage" ]]; then
-                    new_name="vita3k-${{ github.sha }}-memory-mapping-$memory_mapping-appimage.zip"
+                    new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-appimage.zip"
                   else
                     new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-ubuntu-22.04-arm.zip"
                   fi
@@ -206,6 +206,8 @@ jobs:
           done
           echo "Contenido de artifacts/:"
           ls -al artifacts/
+        env:
+          GIT_SHORT_SHA: ${{ env.git_short_sha }}
 
       - name: Upload Release
         shell: bash
