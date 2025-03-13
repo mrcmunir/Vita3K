@@ -234,7 +234,7 @@ jobs:
           # Subir release usando ghr
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ needs.build.outputs.BuildTag }}")" "$TAG_NAME" artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MEMORY_MAPPING_NAME: ${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}
