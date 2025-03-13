@@ -214,7 +214,7 @@ jobs:
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: $BUILD_VARIABLE")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: $BUILD_VARIABLE")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BUILD_VARIABLE: ${{ needs.build.outputs.BuildTag }}
