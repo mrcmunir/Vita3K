@@ -190,7 +190,7 @@ jobs:
         run: |
           mkdir -p artifacts
           find downloaded_artifacts -type f \( \
-            -iname "*.zip" \
+            -iname "*.zip" -o -iname "*.AppImage" \
           \) -exec cp {} artifacts/ \;
           echo "Contenido de artifacts/:"
           ls -al artifacts/
