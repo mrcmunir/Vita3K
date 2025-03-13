@@ -28,25 +28,25 @@ jobs:
             version: zip
             memory_mapping: ON
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
+            extra_cmake_args: -DMEMORY_MAPPING=ON 
             cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
             version: zip
             memory_mapping: OFF
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
+            extra_cmake_args: -DMEMORY_MAPPING=OFF
             cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
             version: appimage
             memory_mapping: ON
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            extra_cmake_args: -DMEMORY_MAPPING=ON -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
             cmake_preset: linux-ninja-clang-appimage
           - os: ubuntu-22.04-arm
             version: appimage
             memory_mapping: OFF
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            extra_cmake_args: -DMEMORY_MAPPING=OFF -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
             cmake_preset: linux-ninja-clang-appimage
 
     steps:
