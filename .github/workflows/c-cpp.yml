@@ -1,3 +1,4 @@
+
 name: Vita3K Optimized CI
 
 on: [push, pull_request]
@@ -174,7 +175,6 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -189,9 +189,18 @@ jobs:
       - name: Combine Artifacts
         run: |
           mkdir -p artifacts
-          find downloaded_artifacts -type f \( \
-            -iname "*.zip" -o -iname "*.AppImage" \
-          \) -exec cp {} artifacts/ \;
+          for dir in downloaded_artifacts/*; do
+            if [ -d "$dir" ]; then
+              build_type=$(basename "$dir" | awk -F'-' '{print $3}')  # appimage o zip
+              memory_mapping=$(basename "$dir" | awk -F'-' '{print $5}')  # enabled o disabled
+              for file in "$dir"/*.zip; do
+                if [ -f "$file" ]; then
+                  new_name=$(basename "$file")-$build_type-$memory_mapping.zip
+                  cp "$file" "artifacts/$new_name"
+                fi
+              done
+            fi
+          done
           echo "Contenido de artifacts/:"
           ls -al artifacts/
 
@@ -200,6 +209,23 @@ jobs:
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K  -recreate -n  'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old releases
+        shell: bash
+        run: |
+          releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[] | .id')
+          releases=($releases)
+          if [[ ${#releases[@]} -gt 10 ]]; then
+            for ((i=0; i<${#releases[@]}-10; i++)); do
+              release_id=${releases[$i]}
+              echo "Eliminando release con ID: $release_id"
+              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
+            done
+          else
+            echo "No hay releases antiguos para eliminar."
+          fi
