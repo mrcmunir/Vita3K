@@ -174,9 +174,31 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Generate unique release name
+      - name: Read and update release counter
         shell: bash
         run: |
+          # Leer el valor actual del contador
+          if [[ -f .release-counter ]]; then
+            COUNTER=$(cat .release-counter)
+          else
+            COUNTER=0
+          fi
+
+          # Incrementar el contador
+          COUNTER=$((COUNTER + 1))
+
+          # Guardar el nuevo valor del contador
+          echo "$COUNTER" > .release-counter
+
+          # Subir el archivo actualizado al repositorio
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .release-counter
+          git commit -m "Update release counter to $COUNTER"
+          git push origin main  # Cambia "main" por la rama que estés usando
+
+          # Almacenar el valor del contador en una variable de entorno
+          echo "RELEASE_COUNTER=$COUNTER" >> $GITHUB_ENV
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -189,13 +211,21 @@ jobs:
           echo "Estructura de downloaded_artifacts:"
           tree downloaded_artifacts
 
+      - name: Combine Artifacts
+        run: |
+          mkdir -p artifacts
+          find downloaded_artifacts -type f \( \
+            -iname "*.zip" \
+          \) -exec cp {} artifacts/ \;
+          echo "Contenido de artifacts/:"
+          ls -al artifacts/
 
       - name: Upload Release
         shell: bash
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K  -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous-${{ env.RELEASE_COUNTER }} artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
