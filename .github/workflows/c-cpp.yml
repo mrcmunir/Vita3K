@@ -195,7 +195,7 @@ jobs:
               memory_mapping=$(basename "$dir" | awk -F'-' '{print $5}')  # enabled o disabled
               for file in "$dir"/*.zip; do
                 if [ -f "$file" ]; then
-                  new_name=$(basename "$file")-$build_type-$memory_mapping.zip
+                  new_name=$(basename "$file" .zip).zip
                   cp "$file" "artifacts/$new_name"
                 fi
               done
@@ -209,7 +209,7 @@ jobs:
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding latest commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
