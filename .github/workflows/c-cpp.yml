@@ -1,4 +1,3 @@
-
 name: Vita3K Optimized CI
 
 on: [push, pull_request]
@@ -191,16 +190,14 @@ jobs:
           mkdir -p artifacts
           for dir in downloaded_artifacts/*; do
             if [ -d "$dir" ]; then
-              # Extraer el tipo de build (appimage o zip) y el estado de memory_mapping (enabled o disabled)
               build_type=$(basename "$dir" | awk -F'-' '{print $3}')  # appimage o zip
               memory_mapping=$(basename "$dir" | awk -F'-' '{print $5}')  # enabled o disabled
               for file in "$dir"/*.zip; do
                 if [ -f "$file" ]; then
-                  # Renombrar el archivo para que sea más corto
                   if [[ "$build_type" == "appimage" ]]; then
-                    new_name="vita3k-${{ env.git_short_sha }}-memory-mapping-$memory_mapping-appimage.zip"
+                    new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-appimage.zip"
                   else
-                    new_name="vita3k-${{ env.git_short_sha }}-memory-mapping-$memory_mapping-ubuntu-22.04-arm.zip"
+                    new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-ubuntu-22.04-arm.zip"
                   fi
                   cp "$file" "artifacts/$new_name"
                 fi
@@ -209,13 +206,15 @@ jobs:
           done
           echo "Contenido de artifacts/:"
           ls -al artifacts/
+        env:
+          GIT_SHORT_SHA: ${{ env.git_short_sha }}
 
       - name: Upload Release
         shell: bash
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding latest commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
