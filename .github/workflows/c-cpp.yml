@@ -202,21 +202,13 @@ jobs:
           echo "Estructura de downloaded_artifacts:"
           tree downloaded_artifacts
 
-      - name: Combine Artifacts
-        run: |
-          mkdir -p artifacts
-          find downloaded_artifacts -type f \( \
-            -iname "*.zip" \
-          \) -exec cp {} artifacts/ \;
-          echo "Contenido de artifacts/:"
-          ls -al artifacts/
 
       - name: Upload Release
         shell: bash
         run: |
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" ${{ env.TAG_NAME }} artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/mrcmunir/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
