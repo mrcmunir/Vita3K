@@ -62,7 +62,6 @@ jobs:
           sudo ./llvm.sh 18
           export CXX=clang++-18
           export CC=clang-18
-
           sudo add-apt-repository -y ppa:mhier/libboost-latest
           sudo add-apt-repository universe
           sudo apt update
@@ -137,14 +136,11 @@ jobs:
       - name: Ccache statistics
         run: ccache -s
 
-      - name: Clean appimage build
+      - name: Compress AppImage into ZIP (for AppImage builds)
+        if: matrix.version == 'appimage'
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
-          cp -f *AppImage* ../
-          rm -rf ./*
-          cp -f ../*AppImage* ./
-          rm -f ../*AppImage*
-        if: matrix.version == 'appimage'
+          zip vita3k-${{ env.git_short_sha }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}.zip Vita3K-aarch64.AppImage Vita3K-aarch64.AppImage.zsync
 
       - name: Create ZIP (for zip builds)
         if: matrix.version == 'zip'
@@ -156,7 +152,6 @@ jobs:
         with:
           name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}
           path: |
-            build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.AppImage*
             build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.zip
 
     outputs:
@@ -179,6 +174,12 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
+      - name: Generate unique release name
+        shell: bash
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          echo "RELEASE_NAME=release-$TIMESTAMP-${{ env.git_short_sha }}" >> $GITHUB_ENV
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -194,21 +195,17 @@ jobs:
         run: |
           mkdir -p artifacts
           find downloaded_artifacts -type f \( \
-            -iname "*.AppImage" -o \
-            -iname "*.AppImage.zsync" -o \
             -iname "*.zip" \
           \) -exec cp {} artifacts/ \;
-
           echo "Contenido de artifacts/:"
           ls -al artifacts/
 
       - name: Upload Release
         shell: bash
         run: |
-          TAG_NAME="continuous-build-${{ env.git_short_sha }}"
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
+          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" ${{ env.RELEASE_NAME }} artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
