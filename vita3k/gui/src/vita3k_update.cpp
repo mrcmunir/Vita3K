@@ -61,7 +61,7 @@ bool init_vita3k_update(GuiState &gui) {
     git_commit_desc_list.clear();
     git_version = 0;
     vita_area_state = {};
-    constexpr auto latest_link = "https://api.github.com/repos/Vita3K/Vita3K/releases/latest";
+    constexpr auto latest_link = "https://api.github.com/repos/mrcmunir/Vita3K/releases/latest";
 
     // Get Build number of latest release
     const auto version = net_utils::get_web_regex_result(latest_link, std::regex("Vita3K Build: (\\d+)"));
@@ -152,13 +152,17 @@ static void download_update(const fs::path &base_path) {
     progress_state.download = true;
     progress_state.pause = false;
     std::thread download([base_path]() {
-        std::string download_continuous_link = "https://github.com/Vita3K/Vita3K/releases/download/continuous";
+        std::string download_continuous_link = "https://github.com/Vita3K/Vita3K/releases/download/continuous-build";
 #ifdef _WIN32
-        download_continuous_link += "/windows-latest.zip";
+    download_continuous_link += "/windows-latest.zip";
 #elif defined(__APPLE__)
-        download_continuous_link += "/macos-latest.dmg";
-#else
-        download_continuous_link += "/ubuntu-latest.zip";
+    download_continuous_link += "/macos-latest.dmg";
+#elif defined(__linux__)
+    #if defined(__x86_64__)
+        download_continuous_link += "/ubuntu-x86-64-latest.zip";
+    #elif defined(__aarch64__)
+        download_continuous_link += "/ubuntu-aarch64-latest.zip";
+    #endif
 #endif
 
 #ifdef __APPLE__
