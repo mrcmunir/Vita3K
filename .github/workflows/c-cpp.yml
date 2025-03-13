@@ -166,9 +166,6 @@ jobs:
 
   create-release:
     needs: [build]
-    strategy:
-      matrix:
-        memory_mapping: [ON, OFF]
     runs-on: ubuntu-22.04-arm
     concurrency:
       group: create-release
@@ -186,21 +183,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded_artifacts
-          pattern: vita3k-*-${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}-*
+          pattern: vita3k-*
 
       - name: Debug downloaded artifacts structure
         run: |
           echo "Estructura de downloaded_artifacts:"
           tree downloaded_artifacts
 
-      - name: Upload
-        shell: bash
+      - name: Combine Artifacts
         run: |
-          echo "Valor de MEMORY_MAPPING_NAME: $MEMORY_MAPPING_NAME"
-          suffix="${MEMORY_MAPPING_NAME#memory-mapping-}"
-          echo "Sufijo extraído: $suffix"
-
-          # Mover archivos a la carpeta artifacts
           mkdir -p artifacts
           find downloaded_artifacts -type f \( \
             -iname "*.AppImage" -o \
@@ -208,36 +199,18 @@ jobs:
             -iname "*.zip" \
           \) -exec cp {} artifacts/ \;
 
-          # Renombrar archivos AppImage y ZIP según el sufijo
-          for file in artifacts/*; do
-            if [[ "$file" == *"memory-mapping-enabled"* ]]; then
-              new_name="${file//memory-mapping-enabled/$suffix}"
-              mv "$file" "$new_name"
-            elif [[ "$file" == *"memory-mapping-disabled"* ]]; then
-              new_name="${file//memory-mapping-disabled/$suffix}"
-              mv "$file" "$new_name"
-            fi
-          done
-
           echo "Contenido de artifacts/:"
           ls -al artifacts/
 
-          # Crear un tag válido
+      - name: Upload Release
+        shell: bash
+        run: |
           TAG_NAME="continuous-build-${{ env.git_short_sha }}"
-
-          # Crear el tag en el repositorio
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git tag "$TAG_NAME"
-          git push origin "$TAG_NAME"
-
-          # Subir release usando ghr
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
           tar xfv ghr_v0.17.0_linux_arm64.tar.gz
           ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MEMORY_MAPPING_NAME: ${{ matrix.memory_mapping == 'ON' && 'memory-mapping-enabled' || 'memory-mapping-disabled' }}
 
       - name: Delete old releases
         shell: bash
