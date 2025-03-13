@@ -174,6 +174,13 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
+      - name: Download release counter artifact (if it exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-counter
+          path: ./
+          if-no-files-found: ignore
+
       - name: Read and update release counter
         shell: bash
         run: |
@@ -190,15 +197,14 @@ jobs:
           # Guardar el nuevo valor del contador
           echo "$COUNTER" > .release-counter
 
-          # Subir el archivo actualizado al repositorio
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .release-counter
-          git commit -m "Update release counter to $COUNTER"
-          git push origin main  # Cambia "main" por la rama que estés usando
-
           # Almacenar el valor del contador en una variable de entorno
           echo "RELEASE_COUNTER=$COUNTER" >> $GITHUB_ENV
+
+      - name: Upload release counter artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-counter
+          path: .release-counter
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
