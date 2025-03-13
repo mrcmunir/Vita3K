@@ -177,19 +177,6 @@ jobs:
       - name: Generate unique release name
         shell: bash
         run: |
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          echo "RELEASE_NAME=release-$TIMESTAMP-${{ env.git_short_sha }}" >> $GITHUB_ENV
-          echo "TAG_NAME=release-$TIMESTAMP-${{ env.git_short_sha }}" | sed 's/[^a-zA-Z0-9._-]/-/g' >> $GITHUB_ENV
-
-      - name: Create Git tag
-        shell: bash
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git tag ${{ env.TAG_NAME }} ${{ github.sha }}
-          git push origin ${{ env.TAG_NAME }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
