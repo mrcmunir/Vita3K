@@ -203,20 +203,3 @@ jobs:
           ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K  -recreate -n  'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete old releases
-        shell: bash
-        run: |
-          releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[] | .id')
-          releases=($releases)
-          if [[ ${#releases[@]} -gt 10 ]]; then
-            for ((i=0; i<${#releases[@]}-10; i++)); do
-              release_id=${releases[$i]}
-              echo "Eliminando release con ID: $release_id"
-              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
-            done
-          else
-            echo "No hay releases antiguos para eliminar."
-          fi
