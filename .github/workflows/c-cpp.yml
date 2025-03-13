@@ -1,10 +1,10 @@
-name: Vita3K Optimized CI
+name: C/C++ CI
 
 on: [push, pull_request]
 
 jobs:
   format-check:
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,35 +19,47 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04-arm]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, windows-latest, macos-latest]
         config: [Release]
         version: [zip, appimage]
-        memory_mapping: [ON, OFF]
         include:
-          - os: ubuntu-22.04-arm
-            version: zip
-            memory_mapping: ON
+          - os: ubuntu-22.04
+            version: appimage
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
-            cmake_preset: linux-ninja-clang
-          - os: ubuntu-22.04-arm
+            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-x86_64.AppImage
+            cmake_preset: linux-ninja-clang-appimage
+          - os: ubuntu-22.04
             version: zip
-            memory_mapping: OFF
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
             cmake_preset: linux-ninja-clang
           - os: ubuntu-22.04-arm
             version: appimage
-            memory_mapping: ON
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=ON -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
-            cmake_preset: linux-ninja-clang-appimage
+            extra_cmake_args: -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
+            cmake_preset: linux-ninja-clang-appimage-arm64
           - os: ubuntu-22.04-arm
-            version: appimage
-            memory_mapping: OFF
+            version: zip
             cache_path: ~/.ccache
-            extra_cmake_args: -DMEMORY_MAPPING=OFF -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLINUXDEPLOY_COMMAND=/usr/local/bin/linuxdeploy-aarch64.AppImage
-            cmake_preset: linux-ninja-clang-appimage
+            cmake_preset: linux-ninja-clang-arm64
+          - os: windows-latest
+            version: zip
+            cache_path: |
+                C:\vcpkg\installed
+                C:\vcpkg\packages
+                C:\Users\runneradmin\AppData\Local\ccache
+            extra_cmake_args: -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+            cmake_preset: windows-ninja
+          - os: macos-latest
+            version: zip
+            cache_path: ~/Library/Caches/ccache
+            extra_cmake_args: -DCMAKE_OSX_ARCHITECTURES="x86_64" -DFORCE_BUILD_OPENSSL_MAC=ON -DVITA3K_FORCE_CUSTOM_BOOST=ON
+            cmake_preset: macos-ninja
+        exclude:
+          - os: macos-latest
+            version: appimage
+          - os: windows-latest
+            version: appimage
+          
 
     steps:
       - uses: actions/checkout@v4
@@ -55,18 +67,24 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Set up build environment
+      - name: Set up build environment (macos-latest)
         run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x ./llvm.sh
-          sudo ./llvm.sh 18
-          export CXX=clang++-18
-          export CC=clang-18
+          brew install ccache ninja create-dmg
+          echo "$(brew --prefix ccache)/libexec" >> $GITHUB_PATH
+          ccache --set-config=compiler_check=content
+        if: matrix.os == 'macos-latest'
+
+      - name: Set up build environment (ubuntu-22.04)
+        run: |
           sudo add-apt-repository -y ppa:mhier/libboost-latest
           sudo add-apt-repository universe
           sudo apt update
-          sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2 zip
+          sudo apt -y install ccache libboost-filesystem1.83-dev libboost-program-options1.83-dev libboost-system1.83-dev libgtk-3-dev libsdl2-dev ninja-build libfuse2
+        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
+ 
       - uses: actions/cache@v4
         with:
           path: ${{ matrix.cache_path }}
@@ -74,10 +92,18 @@ jobs:
           restore-keys: |
             cache-${{ matrix.os }}-${{ matrix.config }}-
 
-      - name: Set up SDL 2.30.9
+      - name: Set up build environment (windows-latest)
+        run: |
+          vcpkg install zlib:x64-windows-static-md boost-system:x64-windows-static-md boost-filesystem:x64-windows-static-md boost-program-options:x64-windows-static-md boost-icl:x64-windows-static-md boost-variant:x64-windows-static-md curl:x64-windows-static-md openssl:x64-windows-static-md
+          choco install ccache
+        if: matrix.os == 'windows-latest'
+
+      - name: Set up SDL 2.30.9  (ubuntu-22.04)
         run: |
           SDL2VER=2.30.9
-          mkdir -p ~/.ccache
+          if [[ ! -e ~/.ccache ]]; then
+            mkdir ~/.ccache
+          fi  
           cd ~/.ccache
           if [[ ! -e SDL2-${SDL2VER} ]]; then
             curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz
@@ -88,15 +114,25 @@ jobs:
             rm SDL2-${SDL2VER}.tar.gz
           fi
           sudo make -C SDL2-${SDL2VER} install
+        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
-      - name: Set up linuxdeploy
+      - name: Set up linuxdeploy x86-64 (ubuntu-22.04, appimage)
+        run: |
+          if [[ ! -e linuxdeploy-x86_64.AppImage ]]; then
+            curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-x86_64.AppImage
+          fi
+          sudo cp -f linuxdeploy-x86_64.AppImage /usr/local/bin/
+          sudo chmod +x /usr/local/bin/linuxdeploy-x86_64.AppImage
+        if: matrix.os == 'ubuntu-22.04' && matrix.version == 'appimage'
+
+      - name: Set up linuxdeploy aarch64 (ubuntu-22.04-arm, appimage)
         run: |
           if [[ ! -e linuxdeploy-aarch64.AppImage ]]; then
             curl -sLO https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-aarch64.AppImage
           fi
           sudo cp -f linuxdeploy-aarch64.AppImage /usr/local/bin/
           sudo chmod +x /usr/local/bin/linuxdeploy-aarch64.AppImage
-        if: matrix.version == 'appimage'
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
 
       - name: Ccache setup
         run: ccache -z
@@ -117,121 +153,186 @@ jobs:
       - name: Set Build Variable
         shell: bash
         run: echo "build_variable=$(git rev-list HEAD --count)" >> $GITHUB_ENV
+        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
-      - name: Set Memory Mapping Name
+      - name: Bundle Shared Objects (x86-64)
+        id: bundle_shared_objects_x86_64
         run: |
-          if [[ ${{ matrix.memory_mapping }} == 'ON' ]]; then
-            echo "MEMORY_MAPPING_NAME=memory-mapping-enabled" >> $GITHUB_ENV
-          else
-            echo "MEMORY_MAPPING_NAME=memory-mapping-disabled" >> $GITHUB_ENV
-          fi
+            cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+            cp /usr/lib/x86_64-linux-gnu/libssl.so.3 ./libssl.so.3
+            cp /usr/lib/x86_64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
+        if: matrix.os == 'ubuntu-22.04'
 
-      - name: Bundle Shared Objects
-        id: bundle_shared_objects
+      - name: Bundle Shared Objects (aarch64)
+        id: bundle_shared_objects_arm64
         run: |
-          cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
-          cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
-          cp /usr/lib/aarch64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
+            cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+            cp /usr/lib/aarch64-linux-gnu/libssl.so.3 ./libssl.so.3
+            cp /usr/lib/aarch64-linux-gnu/libcrypto.so.3 ./libcrypto.so.3
+        if: matrix.os == 'ubuntu-22.04-arm'
 
       - name: Ccache statistics
-        run: ccache -s
-
-      - name: Compress AppImage into ZIP (for AppImage builds)
-        if: matrix.version == 'appimage'
+        run: ccache -s  
+        
+      - name: Create DMG (macos-latest)
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
-          zip vita3k-${{ env.git_short_sha }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}.zip Vita3K-aarch64.AppImage Vita3K-aarch64.AppImage.zsync
+          create-dmg \
+            --volname "Vita3K Installer" \
+            --volicon Vita3K.app/Contents/Resources/Vita3K.icns \
+            --window-size 500 300 \
+            --icon-size 100 \
+            --icon Vita3K.app 120 115 \
+            --app-drop-link 360 115 \
+            vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ matrix.os }}.dmg \
+            Vita3K.app
+          rm -rf Vita3K.app
+        if: matrix.os == 'macos-latest'
 
-      - name: Create ZIP (for zip builds)
-        if: matrix.version == 'zip'
+      - name: Clean appimage x86-64 build (ubuntu-22.04, appimage)
         run: |
           cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
-          zip -r vita3k-${{ env.git_short_sha }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}.zip .
+          cp -f *AppImage* ../
+          rm -rf ./*
+          cp -f ../*AppImage* ./
+          rm -f ../*AppImage*
+        if: matrix.os == 'ubuntu-22.04' && matrix.version == 'appimage'
+
+      - name: Clean appimage aarch64 build (ubuntu-22.04-arm, appimage)
+        run: |
+          cd build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
+          cp -f *AppImage* ../
+          rm -rf ./*
+          cp -f ../*AppImage* ./
+          rm -f ../*AppImage*
+        if: matrix.os == 'ubuntu-22.04-arm' && matrix.version == 'appimage'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ env.MEMORY_MAPPING_NAME }}-${{ matrix.os }}
-          path: |
-            build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}/*.zip
+          name: vita3k-${{ env.git_short_sha }}-${{ matrix.version }}-${{ matrix.os }}
+          path: build/${{ matrix.cmake_preset }}/bin/${{ matrix.config }}
 
     outputs:
       BuildTag: ${{ env.build_variable }}
       ShortSHA: ${{ env.git_short_sha }}
-      MEMORY_MAPPING_NAME: ${{ env.MEMORY_MAPPING_NAME }}
 
   create-release:
     needs: [build]
-    runs-on: ubuntu-22.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: [test]         #,store]
+    runs-on: ubuntu-22.04
     concurrency:
       group: create-release
       cancel-in-progress: false
     if: |
-      github.ref == 'refs/heads/master' &&
+      github.ref == 'refs/heads/test' &&
       github.repository == 'mrcmunir/Vita3K'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        with:
-          path: downloaded_artifacts
-          pattern: vita3k-*
 
-      - name: Debug downloaded artifacts structure
-        run: |
-          echo "Estructura de downloaded_artifacts:"
-          tree downloaded_artifacts
+      - name: Get Build Variable
+        run: echo "Build_Variable=${{ needs.build.outputs.BuildTag }}" >> $GITHUB_ENV
 
-      - name: Combine Artifacts
+      - name: Get Git Short SHA
+        run: echo "Short_SHA=${{ needs.build.outputs.ShortSHA }}" >> $GITHUB_ENV
+
+      - name: Get latest commit message
+        run: echo "Latest_Commit_Message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
+
+      - name: Get last committer
         run: |
-          mkdir -p artifacts
-          for dir in downloaded_artifacts/*; do
-            if [ -d "$dir" ]; then
-              build_type=$(basename "$dir" | awk -F'-' '{print $3}')  # appimage o zip
-              memory_mapping=$(basename "$dir" | awk -F'-' '{print $6}')  # enabled o disabled
-              for file in "$dir"/*.zip; do
-                if [ -f "$file" ]; then
-                  if [[ "$build_type" == "appimage" ]]; then
-                    new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-appimage.zip"
-                  else
-                    new_name="vita3k-$GIT_SHORT_SHA-memory-mapping-$memory_mapping-ubuntu-22.04-arm.zip"
-                  fi
-                  cp "$file" "artifacts/$new_name"
-                fi
-              done
+          COMMITTER_NAME=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/Vita3K/Vita3K/commits/${{ github.sha }} \
+          | jq -r '.commit.author.name')
+          echo "Commiter_Name=$COMMITTER_NAME" >> $GITHUB_ENV
+
+      - name: Upload
+        shell: bash
+        run: |
+          mkdir artifacts/
+          files=$(find . \( -name "*latest" -o -name "*22.04*" \))
+          for f in $files; do
+            if [[ $f == *macos-latest ]]
+            then
+              cp $(basename $f)/$(basename $f).dmg artifacts/macos-latest.dmg
+            elif [[ $f == *ubuntu-22.04 ]]
+            then
+              if [[ $f == *appimage* ]]
+              then
+                cp $(basename $f)/*.AppImage* artifacts/
+              else
+                rm -f $(basename $f)/*.AppImage*
+                echo "Compressing $f"
+                (cd $(basename $f) && zip -r ../artifacts/$(basename $f | cut -d "-" -f 4)-x86-64-latest.zip *)
+              fi
+            elif [[ $f == *ubuntu-22.04-arm ]]
+            then
+              if [[ $f == *appimage* ]]
+              then
+                cp $(basename $f)/*.AppImage* artifacts/
+              else
+                rm -f $(basename $f)/*.AppImage*
+                echo "Compressing $f"
+                (cd $(basename $f) && zip -r ../artifacts/$(basename $f | cut -d "-" -f 4)-aarch64-latest.zip *)
+              fi
+            else
+              echo "Compressing $f"
+              (cd $(basename $f) && zip -r ../artifacts/$(basename $f | cut -d "-" -f 4)-latest.zip *)
             fi
           done
-          echo "Contenido de artifacts/:"
           ls -al artifacts/
-        env:
-          GIT_SHORT_SHA: ${{ needs.build.outputs.ShortSHA }}
-
-      - name: Upload Release
-        shell: bash
-        run: |
-          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_arm64.tar.gz
-          tar xfv ghr_v0.17.0_linux_arm64.tar.gz
-          ghr_v0.17.0_linux_arm64/ghr -u mrcmunir -r Vita3K -recreate -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: $BUILD_VARIABLE")" continuous artifacts/
+          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
+          tar xfv ghr_v0.17.0_linux_amd64.tar.gz
+          ghr_v0.17.0_linux_amd64/ghr -u mrcmunir -r Vita3K -n 'Automatic CI builds' -b "$(printf "Corresponding commit: ${{ github.sha }}\nVita3K Build: ${{ env.Build_Variable }}")" continuous-build artifacts/
+        if: matrix.repo == 'test'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BUILD_VARIABLE: ${{ needs.build.outputs.BuildTag }}
 
-      - name: Delete old releases
-        shell: bash
-        run: |
-          releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[] | .id')
-          releases=($releases)
-          if [[ ${#releases[@]} -gt 10 ]]; then
-            for ((i=0; i<${#releases[@]}-10; i++)); do
-              release_id=${releases[$i]}
-              echo "Eliminando release con ID: $release_id"
-              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
-            done
-          else
-            echo "No hay releases antiguos para eliminar."
-          fi
+#    - name: Make release on store repository
+#        shell: bash
+#        run: |
+# 
+ #         mkdir artifacts/
+#          files=$(find . \( -name "*latest" -o -name "*22.04*" \))
+ #         for f in $files; do
+  #          if [[ $f == *macos-latest ]]
+ #           then
+ #             cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
+ #           elif [[ $f == *ubuntu-22.04 ]]
+ #           then
+ #             if [[ $f == *appimage* ]]
+ #             then
+ #               cp $(basename $f)/*.AppImage* artifacts/
+ #             else
+ #               rm -f $(basename $f)/*.AppImage*
+ #               echo "Compressing $f"
+ #               7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu.7z $(basename $f)
+ #             fi
+ #           elif [[ $f == *ubuntu-22.04-arm ]]
+ #           then
+ #             if [[ $f == *appimage* ]]
+ #             then
+ #               cp $(basename $f)/*.AppImage* artifacts/
+ #             else
+ #               rm -f $(basename $f)/*.AppImage*
+ #               echo "Compressing $f"
+ #               7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu-arm64.7z $(basename $f)
+ #             fi
+ #           else
+ #             echo "Compressing $f"
+ #             7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+ #           fi
+ #         done
+ #         ls -al artifacts/
+  #        wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
+   #       tar xfv ghr_v0.17.0_linux_amd64.tar.gz
+   #       ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K-builds  -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
+    #    if: matrix.repo == 'store'
+     #   env:
+      #    GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
+         
