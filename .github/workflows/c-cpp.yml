@@ -191,7 +191,7 @@ jobs:
           for dir in downloaded_artifacts/*; do
             if [ -d "$dir" ]; then
               build_type=$(basename "$dir" | awk -F'-' '{print $3}')  # appimage o zip
-              memory_mapping=$(basename "$dir" | awk -F'-' '{print $5}')  # enabled o disabled
+              memory_mapping=$(basename "$dir" | awk -F'-' '{print $6}')  # enabled o disabled
               for file in "$dir"/*.zip; do
                 if [ -f "$file" ]; then
                   if [[ "$build_type" == "appimage" ]]; then
