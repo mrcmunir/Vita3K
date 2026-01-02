@@ -43,6 +43,5 @@ if [ $boot -eq 1 ]; then
     ./Vita3K
 else
     echo
-    read -r -p "Press [Enter] key to continue..."
+    read -p "Press [Enter] key to continue..."
 fi
-
