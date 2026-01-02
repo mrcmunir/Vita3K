@@ -339,7 +339,7 @@ jobs:
                 else
                   rm -f $(basename $f)/*.AppImage*
                   echo "Compressing $f (ARM64)"
-                  (cd $(basename $f) && 7z a -mx=9 ../artifacts/ubuntu-aarch64-latest.7z *)
+                  (cd $(basename $f) && zip -r ../artifacts/ubuntu-aarch64-latest.zip *)
                 fi
               else
                 echo "Compressing $f"
