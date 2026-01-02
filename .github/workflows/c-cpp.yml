@@ -283,7 +283,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: [master, store]
+        repo: [master-arm] #,store]
     runs-on: ubuntu-latest
     concurrency:
       group: create-release-${{ matrix.repo }}
@@ -355,43 +355,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Make release on store repository
-        shell: bash
-        run: |
-          mkdir artifacts/
-          files=$(find . \( -name "*latest" -o -name "*22.04" -o -name "*22.04-arm" -o -name "*apk-android" \))
-          for f in $files; do
-            if [[ $f == *apk-android ]]; then
-              cp $(basename $f)/*.apk artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_android.apk
-            elif [[ $f == *macos-latest ]]; then
-              cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
-            else
-              if [[ $f == *ubuntu-22.04 ]]; then
-                if [[ $f == *appimage* ]]; then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f (x86_64)"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu-x86_64.7z $(basename $f)
-                fi
-              elif [[ $f == *ubuntu-22.04-arm ]]; then
-                if [[ $f == *appimage* ]]; then
-                  cp $(basename $f)/*.AppImage* artifacts/
-                else
-                  rm -f $(basename $f)/*.AppImage*
-                  echo "Compressing $f (ARM64)"
-                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu-aarch64.7z $(basename $f)
-                fi
-              else
-                echo "Compressing $f"
-                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
-              fi
-            fi
-          done
-          ls -al artifacts/
-          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
-          tar xfv ghr_v0.17.0_linux_amd64.tar.gz
-          ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K-builds -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
-        if: matrix.repo == 'store'
-        env:
-          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
+#      - name: Make release on store repository
+#        shell: bash
+#        run: |
+#          mkdir artifacts/
+#          files=$(find . \( -name "*latest" -o -name "*22.04" -o -name "*22.04-arm" -o -name "*apk-android" \))
+#          for f in $files; do
+#            if [[ $f == *apk-android ]]; then
+#              cp $(basename $f)/*.apk artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_android.apk
+#            elif [[ $f == *macos-latest ]]; then
+#              cp $(basename $f)/$(basename $f).dmg artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_macos.dmg
+#            else
+#              if [[ $f == *ubuntu-22.04 ]]; then
+#                if [[ $f == *appimage* ]]; then
+#                  cp $(basename $f)/*.AppImage* artifacts/
+#                else
+#                  rm -f $(basename $f)/*.AppImage*
+#                  echo "Compressing $f (x86_64)"
+#                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu-x86_64.7z $(basename $f)
+#                fi
+#              elif [[ $f == *ubuntu-22.04-arm ]]; then
+#                if [[ $f == *appimage* ]]; then
+#                  cp $(basename $f)/*.AppImage* artifacts/
+#                else
+#                  rm -f $(basename $f)/*.AppImage*
+#                  echo "Compressing $f (ARM64)"
+#                  7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_ubuntu-aarch64.7z $(basename $f)
+#                fi
+#              else
+#                echo "Compressing $f"
+#                7z a -mx=9 artifacts/vita3k-${{ env.Build_Variable }}-${{ env.Short_SHA }}_windows.7z $(basename $f)
+#              fi
+#            fi
+#          done
+#          ls -al artifacts/
+#          wget -c https://github.com/tcnksm/ghr/releases/download/v0.17.0/ghr_v0.17.0_linux_amd64.tar.gz
+#          tar xfv ghr_v0.17.0_linux_amd64.tar.gz
+#          ghr_v0.17.0_linux_amd64/ghr -u Vita3K -r Vita3K-builds -n "Build: ${{ env.Build_Variable }}" -b "$(printf "Corresponding commit: [${{ env.Latest_Commit_Message }}](https://github.com/Vita3K/Vita3K/commit/${{ github.sha }}) (${{ env.Commiter_Name }})")" ${{ env.Build_Variable }} artifacts/
+#        if: matrix.repo == 'store'
+#       env:
+#          GITHUB_TOKEN: ${{ secrets.STORE_TOKEN }}
