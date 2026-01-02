@@ -200,15 +200,19 @@ static void download_update(const fs::path &base_path) {
     progress_state.download = true;
     progress_state.pause = false;
     std::thread download([base_path]() {
-        std::string download_continuous_link = "https://github.com/Vita3K/Vita3K/releases/download/continuous/";
+        std::string download_continuous_link = "https://github.com/mrcmunir/Vita3K/releases/download/continuous/";
 #ifdef _WIN32
         download_continuous_link += "windows-latest.zip";
 #elif defined(__APPLE__)
         download_continuous_link += "macos-latest.dmg";
 #elif defined(__ANDROID__)
         download_continuous_link += "android-latest.apk";
-#else
-        download_continuous_link += "ubuntu-latest.zip";
+#elif defined(__linux__)
+    #if defined(__x86_64__)
+        download_continuous_link += "/ubuntu-latest.zip";
+    #elif defined(__aarch64__)
+        download_continuous_link += "/ubuntu-aarch64-latest.zip";
+    #endif
 #endif
 
 #ifdef __APPLE__
